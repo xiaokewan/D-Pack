@@ -67,24 +67,38 @@ class Hypergraph:
 
 
 def parse_net_file_to_hypergraph(file_path, output_folder):
+    import xml.etree.ElementTree as ET
+
     tree = ET.parse(file_path)
     root = tree.getroot()
     hypergraph_data = []
     external_edges = []
 
-    def add_blocks(block):
+    def preprocess_net_name(net_name, block_name, block_instance):
+        """Preprocess net name to include block hierarchy."""
+        base_name = net_name.split('->')[0] if '->' in net_name else net_name
+        return f"{block_name}-{block_instance}.{base_name}"
+
+    def add_blocks(block, parent_name=""):
+        block_name = block.attrib.get("name", "unknown")
+        block_instance = block.attrib.get("instance", "unknown")
+        full_block_name = f"{parent_name}-{block_name}" if parent_name else block_name
+
         edges = []
 
         # Collect all inputs, outputs, and clocks for the current block
         for io in block.findall('inputs') + block.findall('outputs') + block.findall('clocks'):
-            for net in io:
+            for net in io.iter():
                 net_name = net.text.strip() if net.text else None
                 if net_name:  # Filter out "open" connections
-                    valid_nets = [name for name in net_name.split() if name != "open"]
+                    valid_nets = [
+                        preprocess_net_name(name, full_block_name, block_instance)
+                        for name in net_name.split() if name != "open"
+                    ]
                     edges.extend(valid_nets)
                     # If it's an external connection, add it to external_edges
                     if block == root:
-                        external_edges.append(net_name)
+                        external_edges.extend(valid_nets)
 
         # Add this block's connections to the hypergraph
         if edges:
@@ -92,7 +106,7 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
 
         # Recursively process child blocks
         for child_block in block.findall('block'):
-            add_blocks(child_block)
+            add_blocks(child_block, full_block_name)
 
     # Start processing from the root block
     add_blocks(root)
