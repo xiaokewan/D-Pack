@@ -2,8 +2,12 @@ import os
 import xml.etree.ElementTree as ET
 import numpy as np
 import pickle
+import json
 import subprocess
 import sys
+
+from astropy.units.quantity_helper.function_helpers import block
+
 
 class Hypergraph:
     def __init__(self, hypergraph, external_edges, folder, name='hg', suffix=''):
@@ -74,15 +78,21 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
     hypergraph_data = []
     external_edges = []
 
+
+    top_level_name = root.attrib.get("name", "top")
+
     def preprocess_net_name(net_name, block_name, block_instance):
-        """Preprocess net name to include block hierarchy."""
+        """Preprocess net name to include block hierarchy, but exclude top-level name."""
         base_name = net_name.split('->')[0] if '->' in net_name else net_name
-        return f"{block_name}-{block_instance}.{base_name}"
+        # Remove top-level block name from hierarchy
+        if block_name.startswith(top_level_name):
+            block_name = block_name[len(top_level_name) + 1:]  # Strip top-level prefix
+        return f"top_{block_instance}.{base_name}" if block_name == "" else f"{block_name}_{block_instance}.{base_name}"
 
     def add_blocks(block, parent_name=""):
         block_name = block.attrib.get("name", "unknown")
         block_instance = block.attrib.get("instance", "unknown")
-        full_block_name = f"{parent_name}-{block_name}" if parent_name else block_name
+        full_block_name = f"{parent_name}-{block_name}" if parent_name != "" else block_name
 
         edges = []
 
@@ -95,6 +105,7 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
                         preprocess_net_name(name, full_block_name, block_instance)
                         for name in net_name.split() if name != "open"
                     ]
+                    print(f"valid edges: {len(valid_nets)}")
                     edges.extend(valid_nets)
                     # If it's an external connection, add it to external_edges
                     if block == root:
@@ -135,8 +146,12 @@ def process_net_file(net_file, output_folder, hmetis_path):
     rent_data = []
     bipartition(hypergraph, rent_data, hmetis_path)
     output_path = os.path.join(output_folder, os.path.basename(net_file) + '.rent')
-    with open(output_path, "wb") as fp:
-        pickle.dump(rent_data, fp)
+
+    ## json or pickle
+    with open(output_path + '.json', "w", encoding="utf-8") as fp:
+        json.dump(rent_data, fp, indent=4)
+    # with open(output_path, "wb") as fp:
+    #     pickle.dump(rent_data, fp)
     print(f"Rent data saved to {output_path}")
 
 
