@@ -5,6 +5,8 @@ import pickle
 import json
 import subprocess
 import sys
+import re
+
 
 from astropy.units.quantity_helper.function_helpers import block
 
@@ -80,40 +82,68 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
 
 
     top_level_name = root.attrib.get("name", "top")
+    top_level_instance = root.attrib.get("instance", "top")
 
-    def preprocess_net_name(net_name, block_name, block_instance):
+    # TODO: rebuild the function
+    #
+    def rebuild_connections(hypergraph_data):
+        hg_rebuilt = hypergraph_data.copy()
+        for edge in hg_rebuilt:
+            print("hello ,mf")
+
+        return hg_rebuilt
+
+    def preprocess_net_name(net_name, block_name):
         """Preprocess net name to include block hierarchy, but exclude top-level name."""
         base_name = net_name.split('->')[0] if '->' in net_name else net_name
         # Remove top-level block name from hierarchy
         if block_name.startswith(top_level_name):
             block_name = block_name[len(top_level_name) + 1:]  # Strip top-level prefix
-        return f"top_{block_instance}.{base_name}" if block_name == "" else f"{block_name}_{block_instance}.{base_name}"
+
+        if block_name == "" :
+            return f"{base_name}"
+
+        # elif base_name in external_edges:
+        #     return f"{base_name}"
+        # TODO: Here need to be the same
+        # if re.match(r"^n\d+$", base_name):
+        #     return base_name
+
+        else:
+            return f"{block_name}.{base_name}"
+        # return f"{base_name}" if block_name == "" or base_name in external_edges else f"{block_name}_{block_instance}.{base_name}"
 
     def add_blocks(block, parent_name=""):
-        block_name = block.attrib.get("name", "unknown")
+        # block_name = block.attrib.get("name", "unknown")
         block_instance = block.attrib.get("instance", "unknown")
-        full_block_name = f"{parent_name}-{block_name}" if parent_name != "" else block_name
+        block_instance = "" if block_instance == top_level_instance else block_instance
+        full_block_name = f"{parent_name}_{block_instance}" if parent_name != "" else block_instance
 
         edges = []
 
         # Collect all inputs, outputs, and clocks for the current block
+        # Collect all inputs, outputs, and clocks for the current block
         for io in block.findall('inputs') + block.findall('outputs') + block.findall('clocks'):
-            for net in io.iter():
-                net_name = net.text.strip() if net.text else None
-                if net_name:  # Filter out "open" connections
+            # Extract port elements or direct text
+            net_names = [port.text.strip() for port in io.findall('port') if port.text] or [
+                io.text.strip() if io.text else None]
+
+            # Process valid net names
+            for net_name in net_names:
+                if net_name:
                     valid_nets = [
-                        preprocess_net_name(name, full_block_name, block_instance)
-                        for name in net_name.split() if name != "open"
+                        preprocess_net_name(name, full_block_name)
+                        for name in net_name.split()
+                        # TODO: filter the open ports later, after rebuilding the connections
                     ]
-                    print(f"valid edges: {len(valid_nets)}")
                     edges.extend(valid_nets)
-                    # If it's an external connection, add it to external_edges
                     if block == root:
                         external_edges.extend(valid_nets)
 
         # Add this block's connections to the hypergraph
         if edges:
             hypergraph_data.append(edges)
+
 
         # Recursively process child blocks
         for child_block in block.findall('block'):
@@ -124,6 +154,7 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
 
     # Remove duplicates in external edges
     external_edges = list(set(external_edges))
+    hypergraph_data = rebuild_connections(hypergraph_data)
     return Hypergraph(hypergraph_data, external_edges, output_folder)
 
 
