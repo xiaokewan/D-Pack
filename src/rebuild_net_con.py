@@ -1,6 +1,8 @@
 import xml.etree.ElementTree as ET
 import sys, os, re
+from logging import raiseExceptions
 
+from fontTools.unicodedata import block
 from param import Boolean
 
 
@@ -11,100 +13,119 @@ def parse_indexed_signal(signal):
         return match.group(1), int(match.group(2))  # signal_name, index
     return None, None
 
+    # TODO： good for one layer before, not sure there is exceptions.
+    # TODO： Here a problem, the instance is not only, so the value in the dictionary is always updating
+
 
 def build_block_index(root):
-    """block index"""
-    # TODO： good for one layer before, not sure there is exceptions.
+    """
+    Build a hierarchical block index where the key is 'parent_instance.instance' and value is the Element.
+    """
     block_index = {}
 
-    def index_blocks(block):
+    def index_blocks(block, parent_instance=""):
         instance = block.attrib.get("instance")
         if instance:
+            # Construct the hierarchical key
+            instance = f"{parent_instance}.{instance}" if parent_instance else instance
             block_index[instance] = block
-        for child_block in block.findall("block"):
-            index_blocks(child_block)
 
+        # Recursively index child blocks
+        for child_block in block.findall("block"):
+            index_blocks(child_block, parent_instance=instance if instance else parent_instance)
+
+    # Start indexing from the root
     index_blocks(root)
     return block_index
 
 
-def find_signal(block_index, parent_block, signal_name, index, current_block, isInp):
+def find_signal(block_index, full_instance, signal_name, index, isInp):
     """
     Trace signal:
-    1. If isInp=True, find signal in the same layer or parent block (inputs).
-    2. If isInp=False, find signal in child blocks (outputs).
+    - If isInp=True, find signal in the current block or parent inputs.
+    - If isInp=False, find signal in child blocks (outputs).
     """
+    if "." not in signal_name:
+        raise ValueError(f"Invalid signal name format: '{signal_name}'. Expected format is '<instance>.<port_name>'.")
 
-    if "." not in signal_name:  # Signal name without hierarchy
-        return "open"
+    instance, port_name = signal_name.rsplit(".", 1)
 
-    instance, port_name = signal_name.split(".")
-    base_instance = instance.split("[")[0]  # e.g., "alm" from "alm[7]"
-
-    def find_in_inputs():
-        """Search for signal in same layer or parent block."""
-        # Search in the same layer (outputs of sibling blocks)
+    def search_same_layer_or_parent():
+        """Search for inputs in the same layer or parent block."""
+        # Build key for same layer
         target_block = block_index.get(instance)
+
         if target_block is not None:
-            for output_port in target_block.findall("./inputs/port"):
-                if output_port.attrib.get("name") == port_name:
-                    signals = output_port.text.strip().split()
-                    if index < len(signals):
-                        return signals[index]
-
-        # Search in parent block inputs
-        if parent_block is not None:
-            for input_port in parent_block.findall("./inputs/port"):
-                if input_port.attrib.get("name") == base_instance:
-                    signals = input_port.text.strip().split()
+            for port in target_block.findall("./inputs/port") + target_block.findall("./outputs/port"):
+                # Here the inputs can possibly be inputs
+                if port.attrib.get("name") == port_name:
+                    signals = port.text.strip().split()
                     if index < len(signals):
                         return signals[index]
         return None
 
-    def find_in_outputs():
-        """Search for signal in child blocks."""
-        for child_block in current_block.findall("./block"):
-            if child_block.attrib.get("instance") == instance:
-                for output_port in child_block.findall("./outputs/port"):
-                    if output_port.attrib.get("name") == port_name:
-                        signals = output_port.text.strip().split()
-                        if index < len(signals):
-                            return signals[index]
+    def search_in_child_blocks():
+        """Search for outputs in child blocks."""
+        current_block = block_index.get(full_instance)
+        if current_block is not None:
+            for child_block in current_block.findall("./block"):
+                if child_block.attrib.get("instance") == instance:
+                    for output_port in child_block.findall("./outputs/port"):
+                        if output_port.attrib.get("name") == port_name:
+                            signals = output_port.text.strip().split()
+                            if index < len(signals):
+                                return signals[index]
         return None
 
-    # Determine search strategy based on `isInp`
-    if isInp:  # Input-related signal
-        result = find_in_inputs()
-    else:  # Output-related signal
-        result = find_in_outputs()
+    # Choose search strategy
+    if isInp:  # For inputs
+        result = search_same_layer_or_parent()
+        print(
+            f"block instance: {full_instance}, sigal name: {signal_name, index}, Input: {isInp}, result: {result}")
+    else:  # For outputs
+        result = search_in_child_blocks()
+        print(
+            f"block instance: {full_instance}, sigal name: {signal_name, index}, Input: {isInp}, result: {result}")
 
+    if result is None:
+        print("Mamamee Ya")
     return result if result else "open"
 
 
-def update_block_ports(block, block_index, parent_block=None):
+def update_block_ports(block, block_index, parent_instance=""):
     """Update block inputs and outputs."""
 
-    # 1. Process inputs: Search in same layer or parent block
+    # Build full instance path for the current block
+    instance = block.attrib.get("instance", "")
+    full_instance = f"{parent_instance}.{instance}" if parent_instance and instance else instance
+
+    # 1. Process inputs: Search in the same layer or parent block
     for input_port in block.findall("./inputs/port"):
         if input_port.text:
             signals = input_port.text.strip().split()
             updated_signals = []
             for signal in signals:
                 signal_name, index = parse_indexed_signal(signal)
-
-                if signal_name is None and "->" in signal:
-                    # The case for uptrace the signal without index
-                    base_signal = signal.split("->")[0]
-                    base_instance, port_with_index = base_signal.split(".")
-
-                    if parent_block is not None and base_instance == parent_block.attrib.get("mode"):
-                        parent_instance = parent_block.attrib.get("instance", "")
-                        port_name, index = re.match(r"(\w+)\[(\d+)\]", port_with_index).groups()
-                        signal_name = f"{parent_instance}.{port_name}"
-                        index = int(index)
+                # signal_name = f"{parent_instance}.{??}"
 
                 if signal_name:
-                    actual_signal = find_signal(block_index, parent_block, signal_name, index, block, True)
+                    # Extract parent path (excluding current instance)
+                    parent_path = ".".join(full_instance.split(".")[:-1])
+                    combined_signal_name = f"{parent_path}.{signal_name}"
+                else:
+                    combined_signal_name = None
+
+                if signal_name is None and "->" in signal:
+                    # Handle signals without explicit instance index
+                    base_signal = signal.split("->")[0]
+                    base_instance, port_with_index = base_signal.split(".")
+                    port_name, index = re.match(r"(\w+)\[(\d+)\]", port_with_index).groups()
+                    combined_signal_name = f"{parent_instance}.{port_name}"
+                    index = int(index)
+
+
+                if combined_signal_name:
+                    actual_signal = find_signal(block_index, full_instance, combined_signal_name, index, True)
                     updated_signals.append(actual_signal)
                 else:
                     updated_signals.append(signal)
@@ -117,9 +138,8 @@ def update_block_ports(block, block_index, parent_block=None):
             updated_signals = []
             for signal in signals:
                 signal_name, index = parse_indexed_signal(signal)
-
                 if signal_name:
-                    resolved_signal = find_signal(block_index, None, signal_name, index, block, False)
+                    resolved_signal = find_signal(block_index, full_instance, signal_name, index, False)
                     updated_signals.append(resolved_signal)
                 else:
                     updated_signals.append(signal)
@@ -127,7 +147,8 @@ def update_block_ports(block, block_index, parent_block=None):
 
     # 3. Recursive call for child blocks
     for child_block in block.findall("block"):
-        update_block_ports(child_block, block_index, block)
+        update_block_ports(child_block, block_index, full_instance)
+
 
 
 def process_xml(file_path, output_folder):
