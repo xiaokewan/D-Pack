@@ -1,0 +1,13 @@
+Netlist_File: rent_exp_0.30.net Netlist_ID: SHA256:a6faa4186902f75a37147fc7270a24c1066930d9c591dbc0a552a7b304aedb31
+Array size: 9 x 7 logic blocks
+
+#block name	x	y	subblk	layer	block number
+#----------	--	--	------	-----	------------
+n8		2	4	0	0	#0
+out:n4		1	4	1	0	#1
+out:n5		2	1	0	0	#2
+n0		2	5	1	0	#3
+n1		2	5	0	0	#4
+n2		1	4	0	0	#5
+n3		2	1	1	0	#6
+pclk		7	4	0	0	#7

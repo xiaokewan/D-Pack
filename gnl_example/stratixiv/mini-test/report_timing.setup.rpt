@@ -1,0 +1,135 @@
+#Timing report of worst 4 path(s)
+# Unit scale: 1e-09 seconds
+# Output precision: 3
+
+#Path 1
+Startpoint: n2.inpad[0] (.input clocked by pclk)
+Endpoint  : out:n4.outpad[0] (.output clocked by pclk)
+Path Type : setup
+
+Point                                                             Incr      Path
+--------------------------------------------------------------------------------
+clock pclk (rise edge)                                           0.000     0.000
+clock source latency                                             0.000     0.000
+input external delay                                             0.000     0.000
+n2.inpad[0] (.input)                                             0.000     0.000
+n5.in[1] (.names)                                                1.733     1.733
+n5.out[0] (.names)                                               0.261     1.994
+n8.in[2] (.names)                                                0.100     2.094
+n8.out[0] (.names)                                               0.261     2.355
+n12.in[0] (.names)                                               0.289     2.643
+n12.out[0] (.names)                                              0.261     2.904
+n13.in[0] (.names)                                               0.340     3.244
+n13.out[0] (.names)                                              0.261     3.505
+n14.in[1] (.names)                                               0.100     3.605
+n14.out[0] (.names)                                              0.261     3.866
+n4.in[0] (.names)                                                0.100     3.966
+n4.out[0] (.names)                                               0.261     4.227
+out:n4.outpad[0] (.output)                                       3.292     7.519
+data arrival time                                                          7.519
+
+clock pclk (rise edge)                                           0.000     0.000
+clock source latency                                             0.000     0.000
+clock uncertainty                                                0.000     0.000
+output external delay                                            0.000     0.000
+data required time                                                         0.000
+--------------------------------------------------------------------------------
+data required time                                                         0.000
+data arrival time                                                         -7.519
+--------------------------------------------------------------------------------
+slack (VIOLATED)                                                          -7.519
+
+
+#Path 2
+Startpoint: n2.inpad[0] (.input clocked by pclk)
+Endpoint  : out:n5.outpad[0] (.output clocked by pclk)
+Path Type : setup
+
+Point                                                             Incr      Path
+--------------------------------------------------------------------------------
+clock pclk (rise edge)                                           0.000     0.000
+clock source latency                                             0.000     0.000
+input external delay                                             0.000     0.000
+n2.inpad[0] (.input)                                             0.000     0.000
+n5.in[1] (.names)                                                1.733     1.733
+n5.out[0] (.names)                                               0.261     1.994
+out:n5.outpad[0] (.output)                                       3.605     5.598
+data arrival time                                                          5.598
+
+clock pclk (rise edge)                                           0.000     0.000
+clock source latency                                             0.000     0.000
+clock uncertainty                                                0.000     0.000
+output external delay                                            0.000     0.000
+data required time                                                         0.000
+--------------------------------------------------------------------------------
+data required time                                                         0.000
+data arrival time                                                         -5.598
+--------------------------------------------------------------------------------
+slack (VIOLATED)                                                          -5.598
+
+
+#Path 3
+Startpoint: n2.inpad[0] (.input clocked by pclk)
+Endpoint  : n7.D[0] (.latch clocked by pclk)
+Path Type : setup
+
+Point                                                             Incr      Path
+--------------------------------------------------------------------------------
+clock pclk (rise edge)                                           0.000     0.000
+clock source latency                                             0.000     0.000
+input external delay                                             0.000     0.000
+n2.inpad[0] (.input)                                             0.000     0.000
+n5.in[1] (.names)                                                1.733     1.733
+n5.out[0] (.names)                                               0.261     1.994
+n8.in[2] (.names)                                                0.100     2.094
+n8.out[0] (.names)                                               0.261     2.355
+n6.in[1] (.names)                                                0.289     2.643
+n6.out[0] (.names)                                               0.261     2.904
+n7.D[0] (.latch)                                                 0.100     3.004
+data arrival time                                                          3.004
+
+clock pclk (rise edge)                                           0.000     0.000
+clock source latency                                             0.000     0.000
+pclk.inpad[0] (.input)                                           0.000     0.000
+n7.clk[0] (.latch)                                               1.418     1.418
+clock uncertainty                                                0.000     1.418
+cell setup time                                                 -0.066     1.352
+data required time                                                         1.352
+--------------------------------------------------------------------------------
+data required time                                                         1.352
+data arrival time                                                         -3.004
+--------------------------------------------------------------------------------
+slack (VIOLATED)                                                          -1.652
+
+
+#Path 4
+Startpoint: n3.inpad[0] (.input clocked by pclk)
+Endpoint  : n11.D[0] (.latch clocked by pclk)
+Path Type : setup
+
+Point                                                             Incr      Path
+--------------------------------------------------------------------------------
+clock pclk (rise edge)                                           0.000     0.000
+clock source latency                                             0.000     0.000
+input external delay                                             0.000     0.000
+n3.inpad[0] (.input)                                             0.000     0.000
+n10.in[0] (.names)                                               1.807     1.807
+n10.out[0] (.names)                                              0.261     2.068
+n11.D[0] (.latch)                                                0.100     2.168
+data arrival time                                                          2.168
+
+clock pclk (rise edge)                                           0.000     0.000
+clock source latency                                             0.000     0.000
+pclk.inpad[0] (.input)                                           0.000     0.000
+n11.clk[0] (.latch)                                              1.418     1.418
+clock uncertainty                                                0.000     1.418
+cell setup time                                                 -0.066     1.352
+data required time                                                         1.352
+--------------------------------------------------------------------------------
+data required time                                                         1.352
+data arrival time                                                         -2.168
+--------------------------------------------------------------------------------
+slack (VIOLATED)                                                          -0.816
+
+
+#End of timing report

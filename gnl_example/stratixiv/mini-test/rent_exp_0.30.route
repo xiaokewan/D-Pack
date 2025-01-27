@@ -1,0 +1,86 @@
+Placement_File: rent_exp_0.30.place Placement_ID: SHA256:6ebe28307bf8d6246a13f3fcb62c4d3277c67aae439d283526ef28e1722ab167
+Array size: 9 x 7 logic blocks.
+
+Routing:
+
+Net 0 (n3)
+
+Node:	813	SOURCE (0,2,1)  Pad: 145  Switch: 0
+Node:	1003	  OPIN (0,2,1)  Pad: 145  Switch: 2
+Node:	4926	 CHANY (0,1,1)  Track: 4  Switch: 2
+Node:	4928	 CHANY (0,1,2) to (1,5)  Track: 4  Switch: 1
+Node:	1345	  IPIN (0,2,4)  Pin: 4   LAB.data_in[4] Switch: 0
+Node:	1332	  SINK (0,2,4)  Class: 0  Switch: -1 Net_pin_index: 1
+
+
+Net 1 (n1)
+
+Node:	1524	SOURCE (0,2,5)  Pad: 50  Switch: 0
+Node:	1714	  OPIN (0,2,5)  Pad: 50  Switch: 2
+Node:	4931	 CHANY (0,1,4) to (1,5)  Track: 1  Switch: 1
+Node:	1346	  IPIN (0,2,4)  Pin: 5   LAB.data_in[5] Switch: 0
+Node:	1332	  SINK (0,2,4)  Class: 0  Switch: -1 Net_pin_index: 1
+
+
+Net 2 (n0)
+
+Node:	1619	SOURCE (0,2,5)  Pad: 145  Switch: 0
+Node:	1809	  OPIN (0,2,5)  Pad: 145  Switch: 2
+Node:	4929	 CHANY (0,1,2) to (1,5)  Track: 5  Switch: 1
+Node:	1341	  IPIN (0,2,4)  Pin: 0   LAB.data_in[0] Switch: 0
+Node:	1332	  SINK (0,2,4)  Class: 0  Switch: -1 Net_pin_index: 1
+
+
+Net 3 (n2)
+
+Node:	266	SOURCE (0,1,4)  Pad: 50  Switch: 0
+Node:	456	  OPIN (0,1,4)  Pad: 50  Switch: 2
+Node:	4880	 CHANX (0,1,4) to (4,4)  Track: 0  Switch: 1
+Node:	1343	  IPIN (0,2,4)  Pin: 2   LAB.data_in[2] Switch: 0
+Node:	1332	  SINK (0,2,4)  Class: 0  Switch: -1 Net_pin_index: 1
+
+
+Net 4 (n12)
+
+Node:	1336	SOURCE (0,2,4)  Class: 4  Switch: 0
+Node:	1431	  OPIN (0,2,4)  Pin: 90   LAB.data_out[1] Switch: 2
+Node:	4925	 CHANY (0,1,1) to (1,4)  Track: 3  Switch: 1
+Node:	1344	  IPIN (0,2,4)  Pin: 3   LAB.data_in[3] Switch: 0
+Node:	1332	  SINK (0,2,4)  Class: 0  Switch: -1 Net_pin_index: 1
+
+
+Net 5 (n8)
+
+Node:	1336	SOURCE (0,2,4)  Class: 4  Switch: 0
+Node:	1433	  OPIN (0,2,4)  Pin: 92   LAB.data_out[3] Switch: 2
+Node:	4885	 CHANX (0,1,4) to (2,4)  Track: 5  Switch: 1
+Node:	1342	  IPIN (0,2,4)  Pin: 1   LAB.data_in[1] Switch: 0
+Node:	1332	  SINK (0,2,4)  Class: 0  Switch: -1 Net_pin_index: 1
+
+
+Net 6 (n4)
+
+Node:	1336	SOURCE (0,2,4)  Class: 4  Switch: 0
+Node:	1434	  OPIN (0,2,4)  Pin: 93   LAB.data_out[4] Switch: 2
+Node:	4930	 CHANY (0,1,4) to (1,5)  Track: 0  Switch: 2
+Node:	4883	 CHANX (0,1,4)  Track: 3  Switch: 1
+Node:	501	  IPIN (0,1,4)  Pad: 95  Switch: 0
+Node:	311	  SINK (0,1,4)  Pad: 95  Switch: -1 Net_pin_index: 1
+
+
+Net 7 (n5)
+
+Node:	1336	SOURCE (0,2,4)  Class: 4  Switch: 0
+Node:	1432	  OPIN (0,2,4)  Pin: 91   LAB.data_out[2] Switch: 2
+Node:	4886	 CHANX (0,2,4) to (5,4)  Track: 2  Switch: 2
+Node:	4973	 CHANY (0,5,1) to (5,4)  Track: 3  Switch: 2
+Node:	4843	 CHANX (0,2,1) to (5,1)  Track: 5  Switch: 2
+Node:	4927	 CHANY (0,1,1)  Track: 5  Switch: 1
+Node:	858	  IPIN (0,2,1)  Pad: 0  Switch: 0
+Node:	668	  SINK (0,2,1)  Pad: 0  Switch: -1 Net_pin_index: 1
+
+
+Net 8 (pclk): global net connecting:
+
+Block pclk (#7) at (7,4), Pin class 50.
+Block n8 (#0) at (2,4), Pin class 8.
