@@ -53,7 +53,17 @@ def find_signal(block_index, full_instance, signal_name, index, isInp):
     def search_same_layer_or_parent():
         """Search for inputs in the same layer or parent block."""
         # Build key for same layer
-        target_block = block_index.get(instance)
+        # target_block = block_index.get(instance)
+
+        if "[" in instance:  # e.g., "alm[7]"
+            base_instance = instance.split("[")[0]  # Extract "alm"
+            # Replace the last part of `full_instance` with `instance`
+            key_prefix = ".".join(full_instance.split(".")[:-1])  # Parent path up to `alm[6]`
+            hierarchical_key = f"{key_prefix}.{instance}"  # e.g., "FPGA_packed_netlist[0].LAB[0].alm[7]"
+        else:
+            # Handle cases without indexing (e.g., a plain `instance`)
+            hierarchical_key = f"{full_instance}.{instance}"
+        target_block = block_index.get(hierarchical_key)
 
         if target_block is not None:
             for port in target_block.findall("./inputs/port") + target_block.findall("./outputs/port"):
