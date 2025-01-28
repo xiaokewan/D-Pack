@@ -53,16 +53,7 @@ def find_signal(block_index, full_instance, signal_name, index, isInp):
     def search_same_layer_or_parent():
         """Search for inputs in the same layer or parent block."""
         # Build key for same layer
-        # target_block = block_index.get(instance)
-
-        if "[" in instance:  # e.g., "alm[7]"
-            base_instance = instance.split("[")[0]  # Extract "alm"
-            # Replace the last part of `full_instance` with `instance`
-            key_prefix = ".".join(full_instance.split(".")[:-1])  # Parent path up to `alm[6]`
-            hierarchical_key = f"{key_prefix}.{instance}"  # e.g., "FPGA_packed_netlist[0].LAB[0].alm[7]"
-        else:
-            # Handle cases without indexing (e.g., a plain `instance`)
-            hierarchical_key = f"{full_instance}.{instance}"
+        hierarchical_key = construct_full_instance(full_instance, instance)
         target_block = block_index.get(hierarchical_key)
 
         if target_block is not None:
@@ -91,11 +82,11 @@ def find_signal(block_index, full_instance, signal_name, index, isInp):
     if isInp:  # For inputs
         result = search_same_layer_or_parent()
         print(
-            f"block instance: {full_instance}, sigal name: {signal_name, index}, Input: {isInp}, result: {result}")
+            f"      block instance: {full_instance}, sigal name: {signal_name, index}, Input: {isInp}, result: {result}")
     else:  # For outputs
         result = search_in_child_blocks()
         print(
-            f"block instance: {full_instance}, sigal name: {signal_name, index}, Input: {isInp}, result: {result}")
+            f"      block instance: {full_instance}, sigal name: {signal_name, index}, Input: {isInp}, result: {result}")
 
     if result is None:
         print("Mamamee Ya")
@@ -160,7 +151,33 @@ def find_signal(block_index, full_instance, signal_name, index, isInp):
 #         update_block_ports(child_block, block_index, full_instance)
 
 
+def construct_full_instance(full_instance, instance):
+    """
+    Construct the hierarchical key by appending the instance to the full_instance.
 
+    Args:
+        full_instance (str): The full instance path of the current block.
+        instance (str): The instance to be appended.
+
+    Returns:
+        str: The hierarchical key combining `full_instance` and `instance`.
+    """
+    # Get the base type of the current instance (e.g., "LAB" from "LAB[0]")
+    current_base_type = full_instance.split(".")[-1].split("[")[0]
+
+    # Get the base type of the instance to append (e.g., "alm" from "alm[9]")
+    instance_base_type = instance.split("[")[0]
+
+    # Check if the instance is a child or sibling
+    if current_base_type != instance_base_type:
+        # If it's a different type, directly append it as a child
+        hierarchical_key = f"{full_instance}.{instance}"
+    else:
+        # If it's the same type (e.g., sibling), replace the last segment
+        parent_path = ".".join(full_instance.split(".")[:-1])
+        hierarchical_key = f"{parent_path}.{instance}"
+
+    return hierarchical_key
 
 
 def resolve_signal_recursive(signal, block_index, visited, full_instance, is_input):
@@ -187,11 +204,9 @@ def resolve_signal_recursive(signal, block_index, visited, full_instance, is_inp
     if signal in visited:
         raise ValueError(f"Circular reference detected for signal: {signal}")
 
-
     # Return the resolved signal if already mapped
     if signal in port_mapping:
         return port_mapping[signal]
-
 
     visited.add(f"{full_instance}.{signal_name}[{index}]") if index is not None else visited.add(f"{full_instance}.{signal}")
     if not signal_name:
@@ -206,7 +221,8 @@ def resolve_signal_recursive(signal, block_index, visited, full_instance, is_inp
     # If the resolved signal points to another signal, continue the recursion
     instance, port_name = signal_name.rsplit(".", 1)
     if resolved_signal and resolved_signal not in ["open", signal]:
-        final_signal = resolve_signal_recursive(resolved_signal, block_index, visited, f"{full_instance}.{instance}", is_input)
+        final_signal = resolve_signal_recursive(resolved_signal, block_index, visited, construct_full_instance(full_instance, instance), is_input)
+        print(f"resolved signal: {resolved_signal}, full_instance: {full_instance}.{instance}, full_instance_constructed: {construct_full_instance(full_instance, instance)}")
     else:
         final_signal = resolved_signal
 
