@@ -6,15 +6,42 @@ from fontTools.unicodedata import block
 from param import Boolean
 
 
-def parse_indexed_signal(signal):
-    """parse signals like: alm[7].data_out[3]->LAB_alm_feedback """
+def parse_indexed_signal(signal, full_instance=None):
+    """
+    Parse signals like:
+    - 'alm[7].data_out[3]->LAB_alm_feedback' (explicit instance and port index)
+    - 'LAB.data_in[0]' (resolve omitted instance index using full_instance)
+
+    Args:
+        signal (str): The signal to parse.
+        full_instance (str): The full instance path of the current block, e.g., 'FPGA_packed_netlist[0].LAB[0].alm[0]'.
+
+    Returns:
+        tuple: (signal_name, index) where signal_name includes the resolved instance, and index is the port index.
+    """
+    # Match signals with explicit block instance and port index
     match = re.match(r"(\w+\[\d+\]\.\w+)\[(\d+)\]->", signal)
     if match:
         return match.group(1), int(match.group(2))  # signal_name, index
+
+    # Match signals like 'LAB.data_in[0]' where block instance index might be omitted
+    match = re.match(r"(\w+\.\w+)\[(\d+)\]", signal)
+    if match:
+        base_signal, port_index = match.groups()  # 'LAB.data_in', 0
+        block_name, port_name = base_signal.split(".")  # 'LAB', 'data_in'
+
+        # If the block name is missing its index, resolve it from full_instance
+        if full_instance:
+            # Reverse traverse full_instance to find the correct parent block instance
+            parent_blocks = full_instance.split(".")
+            for parent_block in reversed(parent_blocks):
+                if parent_block.startswith(f"{block_name}["):
+                    resolved_signal = f"{parent_block}.{port_name}"  # e.g., 'LAB[0].data_in'
+                    return resolved_signal, int(port_index)
+
+    # If no match, return None
     return None, None
 
-    # TODO： good for one layer before, not sure there is exceptions.
-    # TODO： Here a problem, the instance is not only, so the value in the dictionary is always updating
 
 
 def build_block_index(root):
@@ -87,68 +114,9 @@ def find_signal(block_index, full_instance, signal_name, index, isInp):
         result = search_in_child_blocks()
         print(
             f"      block instance: {full_instance}, sigal name: {signal_name, index}, Input: {isInp}, result: {result}")
-
-    if result is None:
-        print("Mamamee Ya")
+    if result is not None:
+        print( "MMMMMMMMMMMMMMMMMMMMMAAAAAAAAAAAAAAAAAAAAAMMMMMMMMMMMMMMMMAAAAAAAAAAAAAAMEEEEEEEEEEEEEEEEEEEEYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
     return result if result else "open"
-
-
-# def update_block_ports(block, block_index, parent_instance=""):
-#     """Update block inputs and outputs."""
-#
-#     # Build full instance path for the current block
-#     instance = block.attrib.get("instance", "")
-#     full_instance = f"{parent_instance}.{instance}" if parent_instance and instance else instance
-#
-#     # 1. Process inputs: Search in the same layer or parent block
-#     for input_port in block.findall("./inputs/port"):
-#         if input_port.text:
-#             signals = input_port.text.strip().split()
-#             updated_signals = []
-#             for signal in signals:
-#                 signal_name, index = parse_indexed_signal(signal)
-#                 # signal_name = f"{parent_instance}.{??}"
-#
-#                 if signal_name:
-#                     # Extract parent path (excluding current instance)
-#                     parent_path = ".".join(full_instance.split(".")[:-1])
-#                     combined_signal_name = f"{parent_path}.{signal_name}"
-#                 else:
-#                     combined_signal_name = None
-#
-#                 if signal_name is None and "->" in signal:
-#                     # Handle signals without explicit instance index
-#                     base_signal = signal.split("->")[0]
-#                     base_instance, port_with_index = base_signal.split(".")
-#                     port_name, index = re.match(r"(\w+)\[(\d+)\]", port_with_index).groups()
-#                     combined_signal_name = f"{parent_instance}.{port_name}"
-#                     index = int(index)
-#
-#
-#                 if combined_signal_name:
-#                     actual_signal = find_signal(block_index, full_instance, combined_signal_name, index, True)
-#                     updated_signals.append(actual_signal)
-#                 else:
-#                     updated_signals.append(signal)
-#             input_port.text = " ".join(updated_signals)
-#
-#     # 2. Process outputs: Search in child blocks
-#     for output_port in block.findall("./outputs/port"):
-#         if output_port.text:
-#             signals = output_port.text.strip().split()
-#             updated_signals = []
-#             for signal in signals:
-#                 signal_name, index = parse_indexed_signal(signal)
-#                 if signal_name:
-#                     resolved_signal = find_signal(block_index, full_instance, signal_name, index, False)
-#                     updated_signals.append(resolved_signal)
-#                 else:
-#                     updated_signals.append(signal)
-#             output_port.text = " ".join(updated_signals)
-#
-#     # 3. Recursive call for child blocks
-#     for child_block in block.findall("block"):
-#         update_block_ports(child_block, block_index, full_instance)
 
 
 def construct_full_instance(full_instance, instance):
@@ -199,7 +167,9 @@ def resolve_signal_recursive(signal, block_index, visited, full_instance, is_inp
         return "open"
 
     # Parse the signal name and index
-    signal_name, index = parse_indexed_signal(signal)
+    # TODO: update here, fix the issue will miss the case "LAB.data_in[0]"
+    signal_name, index = parse_indexed_signal(signal, full_instance)
+
     signal = f"{signal_name}{index}" if index is not None else signal
     if signal in visited:
         raise ValueError(f"Circular reference detected for signal: {signal}")
@@ -210,6 +180,7 @@ def resolve_signal_recursive(signal, block_index, visited, full_instance, is_inp
 
     visited.add(f"{full_instance}.{signal_name}[{index}]") if index is not None else visited.add(f"{full_instance}.{signal}")
     if not signal_name:
+        # TODO: In this parse, the signal like LAB_datain[0] will be skipped
         return signal  # Return the original signal if parsing fails
 
     # Search for the resolved signal in the block index
@@ -222,7 +193,7 @@ def resolve_signal_recursive(signal, block_index, visited, full_instance, is_inp
     instance, port_name = signal_name.rsplit(".", 1)
     if resolved_signal and resolved_signal not in ["open", signal]:
         final_signal = resolve_signal_recursive(resolved_signal, block_index, visited, construct_full_instance(full_instance, instance), is_input)
-        print(f"resolved signal: {resolved_signal}, full_instance: {full_instance}.{instance}, full_instance_constructed: {construct_full_instance(full_instance, instance)}")
+        # print(f"resolved signal: {resolved_signal}, full_instance: {full_instance}.{instance}, full_instance_constructed: {construct_full_instance(full_instance, instance)}")
     else:
         final_signal = resolved_signal
 
@@ -297,3 +268,62 @@ if __name__ == '__main__':
         net_file = sys.argv[1]
         output_path = sys.argv[2]
     process_xml(net_file, output_path)
+
+
+# def update_block_ports(block, block_index, parent_instance=""):
+#     """Update block inputs and outputs."""
+#
+#     # Build full instance path for the current block
+#     instance = block.attrib.get("instance", "")
+#     full_instance = f"{parent_instance}.{instance}" if parent_instance and instance else instance
+#
+#     # 1. Process inputs: Search in the same layer or parent block
+#     for input_port in block.findall("./inputs/port"):
+#         if input_port.text:
+#             signals = input_port.text.strip().split()
+#             updated_signals = []
+#             for signal in signals:
+#                 signal_name, index = parse_indexed_signal(signal)
+#                 # signal_name = f"{parent_instance}.{??}"
+#
+#                 if signal_name:
+#                     # Extract parent path (excluding current instance)
+#                     parent_path = ".".join(full_instance.split(".")[:-1])
+#                     combined_signal_name = f"{parent_path}.{signal_name}"
+#                 else:
+#                     combined_signal_name = None
+#
+#                 if signal_name is None and "->" in signal:
+#                     # Handle signals without explicit instance index
+#                     base_signal = signal.split("->")[0]
+#                     base_instance, port_with_index = base_signal.split(".")
+#                     port_name, index = re.match(r"(\w+)\[(\d+)\]", port_with_index).groups()
+#                     combined_signal_name = f"{parent_instance}.{port_name}"
+#                     index = int(index)
+#
+#
+#                 if combined_signal_name:
+#                     actual_signal = find_signal(block_index, full_instance, combined_signal_name, index, True)
+#                     updated_signals.append(actual_signal)
+#                 else:
+#                     updated_signals.append(signal)
+#             input_port.text = " ".join(updated_signals)
+#
+#     # 2. Process outputs: Search in child blocks
+#     for output_port in block.findall("./outputs/port"):
+#         if output_port.text:
+#             signals = output_port.text.strip().split()
+#             updated_signals = []
+#             for signal in signals:
+#                 signal_name, index = parse_indexed_signal(signal)
+#                 if signal_name:
+#                     resolved_signal = find_signal(block_index, full_instance, signal_name, index, False)
+#                     updated_signals.append(resolved_signal)
+#                 else:
+#                     updated_signals.append(signal)
+#             output_port.text = " ".join(updated_signals)
+#
+#     # 3. Recursive call for child blocks
+#     for child_block in block.findall("block"):
+#         update_block_ports(child_block, block_index, full_instance)
+
