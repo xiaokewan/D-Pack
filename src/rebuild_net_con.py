@@ -114,7 +114,7 @@ def find_signal(block_index, full_instance, signal_name, index, isInp):
         result = search_in_child_blocks()
         print(
             f"      block instance: {full_instance}, sigal name: {signal_name, index}, Input: {isInp}, result: {result}")
-    if result is not None:
+    if result is None:
         print( "MMMMMMMMMMMMMMMMMMMMMAAAAAAAAAAAAAAAAAAAAAMMMMMMMMMMMMMMMMAAAAAAAAAAAAAAMEEEEEEEEEEEEEEEEEEEEYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
     return result if result else "open"
 
