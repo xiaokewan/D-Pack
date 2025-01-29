@@ -115,7 +115,7 @@ def find_signal(block_index, full_instance, signal_name, index, isInp):
         print(
             f"      block instance: {full_instance}, sigal name: {signal_name, index}, Input: {isInp}, result: {result}")
     if result is None:
-        print( "MMMMMMMMMMMMMMMMMMMMMAAAAAAAAAAAAAAAAAAAAAMMMMMMMMMMMMMMMMAAAAAAAAAAAAAAMEEEEEEEEEEEEEEEEEEEEYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        print( "Shit")
     return result if result else "open"
 
 
@@ -130,11 +130,17 @@ def construct_full_instance(full_instance, instance):
     Returns:
         str: The hierarchical key combining `full_instance` and `instance`.
     """
-    # Get the base type of the current instance (e.g., "LAB" from "LAB[0]")
+    # Get (e.g., "LAB" from "LAB[0]")
     current_base_type = full_instance.split(".")[-1].split("[")[0]
-
-    # Get the base type of the instance to append (e.g., "alm" from "alm[9]")
+    # Get (e.g., "alm" from "alm[9]")
     instance_base_type = instance.split("[")[0]
+
+    if instance_base_type in full_instance:
+        # Find where the instance exists in the hierarchy and trim everything after it
+        parts = full_instance.split(".")
+        for i in range(len(parts)):
+            if parts[i].startswith(instance_base_type + "["):
+                return ".".join(parts[:i+1])  # Keep up to the found parent instance
 
     # Check if the instance is a child or sibling
     if current_base_type != instance_base_type:
