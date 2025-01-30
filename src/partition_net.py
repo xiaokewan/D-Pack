@@ -12,13 +12,15 @@ class Hypergraph:
         self.external_edges = np.array(external_edges)
 
         # Filter only valid external edges
-        external_edges_mask = np.zeros(len(self.external_edges), dtype=bool)
-        for edges in hypergraph:
-            for edge in edges:
-                indices = np.argwhere(self.external_edges == edge)
-                if indices.size > 0:
-                    external_edges_mask[indices[0][0]] = True
-        self.external_edges = self.external_edges[external_edges_mask]
+        # external_edges_mask = np.zeros(len(self.external_edges), dtype=bool)
+        # for edges in hypergraph:
+        #     for edge in edges:
+        #         indices = np.argwhere(self.external_edges == edge)
+        #         if indices.size > 0:
+        #             external_edges_mask[indices[0][0]] = True
+        # self.external_edges = self.external_edges[external_edges_mask]
+        self.external_edges = np.array([e for e in external_edges if e and e != "open"])
+
 
         self.n_vertices = len(self.hypergraph)
         self.n_pins = len(self.external_edges)
@@ -69,6 +71,13 @@ class Hypergraph:
         return os.path.join(self.folder, self.name_base + self.suffix)
 
 
+def preprocess_net_name(net_name):
+    """Preprocess net name to remove 'out:' prefix and filter 'open' ports."""
+    if net_name.startswith("out:"):
+        net_name = net_name[4:]  # Remove 'out:' prefix
+    return net_name if net_name and net_name != "open" else None
+
+
 def parse_net_file_to_hypergraph(file_path, output_folder):
     """Parse the netlist XML into a hypergraph structure."""
     tree = ET.parse(file_path)
@@ -82,10 +91,18 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
         for io in block.findall('inputs') + block.findall('outputs') + block.findall('clocks'):
             net_names = [port.text.strip() for port in io.findall('port') if port.text] or [io.text.strip() if io.text else None]
             for net_name in net_names:
+                # if net_name:
+                #     edges.extend(net_name.split())
+                #     if block == root:
+                #         external_edges.update(net_name.split())
                 if net_name:
-                    edges.extend(net_name.split())
+                    filtered_nets = [preprocess_net_name(name) for name in net_name.split()]
+                    filtered_nets = [net for net in filtered_nets if net]  # Remove None values
+                    edges.extend(filtered_nets)
+
                     if block == root:
-                        external_edges.update(net_name.split())
+                        external_edges.update(filtered_nets)
+
 
         # Add to hypergraph if not empty
         if edges:
