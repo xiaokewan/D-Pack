@@ -1,14 +1,9 @@
 import os
 import xml.etree.ElementTree as ET
 import numpy as np
-import pickle
 import json
 import subprocess
 import sys
-import re
-
-
-from astropy.units.quantity_helper.function_helpers import block
 
 
 class Hypergraph:
@@ -16,15 +11,14 @@ class Hypergraph:
         self.hypergraph = np.array(hypergraph, dtype=object)
         self.external_edges = np.array(external_edges)
 
-        # filter
-        external_edges_mask = np.zeros(len(self.external_edges))
+        # Filter only valid external edges
+        external_edges_mask = np.zeros(len(self.external_edges), dtype=bool)
         for edges in hypergraph:
             for edge in edges:
                 indices = np.argwhere(self.external_edges == edge)
                 if indices.size > 0:
-                    index = indices[0]
-                    external_edges_mask[index] = 1
-        self.external_edges = self.external_edges[external_edges_mask == 1]
+                    external_edges_mask[indices[0][0]] = True
+        self.external_edges = self.external_edges[external_edges_mask]
 
         self.n_vertices = len(self.hypergraph)
         self.n_pins = len(self.external_edges)
@@ -33,6 +27,7 @@ class Hypergraph:
         self.suffix = suffix
 
     def print_hmetis_hypergraph(self):
+        """Generate hypergraph format for hMETIS partitioning."""
         edge_nodes = {}
         for i, edges in enumerate(self.hypergraph):
             node = str(i + 1)
@@ -41,21 +36,23 @@ class Hypergraph:
                     edge_nodes[edge].append(node)
                 else:
                     edge_nodes[edge] = [node]
-        self.n_hyperedges = len(edge_nodes)
-        self.n_vertices = len(self.hypergraph)
 
-        hmetis_lines = [f'{self.n_hyperedges} {self.n_vertices}']
-        hmetis_lines.extend(' '.join(nodes) for nodes in edge_nodes.values())
+        hmetis_lines = [f"{len(edge_nodes)} {self.n_vertices}"]
+        hmetis_lines.extend(" ".join(nodes) for nodes in edge_nodes.values())
+
         with open(self.get_path_graphfile(), 'w') as file1:
             file1.writelines([entry + '\n' for entry in hmetis_lines])
 
     def run_hmetis(self, hmetis_path):
-        output = subprocess.run([hmetis_path, self.get_path_graphfile(), '2', '5', '10', '1', '1', '2', '1', '0'],
-                                capture_output=True)
+        """Run hMETIS partitioning."""
+        subprocess.run([hmetis_path, self.get_path_graphfile(), '2', '5', '10', '1', '1', '2', '1', '0'],
+                       capture_output=True)
 
     def split(self, hmetis_path):
+        """Perform bipartitioning using hMETIS."""
         self.print_hmetis_hypergraph()
         self.run_hmetis(hmetis_path)
+
         path_splitfile = self.get_path_graphfile() + '.part.2'
         with open(path_splitfile, 'r') as file1:
             mask = np.array(list(map(int, file1.readlines())))
@@ -73,89 +70,34 @@ class Hypergraph:
 
 
 def parse_net_file_to_hypergraph(file_path, output_folder):
-    import xml.etree.ElementTree as ET
-
+    """Parse the netlist XML into a hypergraph structure."""
     tree = ET.parse(file_path)
     root = tree.getroot()
     hypergraph_data = []
-    external_edges = []
+    external_edges = set()  # Use a set for uniqueness
 
-
-    top_level_name = root.attrib.get("name", "top")
-    top_level_instance = root.attrib.get("instance", "top")
-
-    # TODO: rebuild the function
-    #
-    def rebuild_connections(hypergraph_data):
-        hg_rebuilt = hypergraph_data.copy()
-        for edge in hg_rebuilt:
-            print("hello ,mf")
-
-        return hg_rebuilt
-
-    def preprocess_net_name(net_name, block_name):
-        """Preprocess net name to include block hierarchy, but exclude top-level name."""
-        base_name = net_name.split('->')[0] if '->' in net_name else net_name
-        # Remove top-level block name from hierarchy
-        if block_name.startswith(top_level_name):
-            block_name = block_name[len(top_level_name) + 1:]  # Strip top-level prefix
-
-        if block_name == "" :
-            return f"{base_name}"
-
-        # elif base_name in external_edges:
-        #     return f"{base_name}"
-        # TODO: Here need to be the same
-        # if re.match(r"^n\d+$", base_name):
-        #     return base_name
-
-        else:
-            return f"{block_name}.{base_name}"
-        # return f"{base_name}" if block_name == "" or base_name in external_edges else f"{block_name}_{block_instance}.{base_name}"
-
-    def add_blocks(block, parent_name=""):
-        # block_name = block.attrib.get("name", "unknown")
-        block_instance = block.attrib.get("instance", "unknown")
-        block_instance = "" if block_instance == top_level_instance else block_instance
-        full_block_name = f"{parent_name}_{block_instance}" if parent_name != "" else block_instance
-
+    def add_blocks(block):
         edges = []
-
-        # Collect all inputs, outputs, and clocks for the current block
-        # Collect all inputs, outputs, and clocks for the current block
+        # Collect inputs, outputs, and clocks
         for io in block.findall('inputs') + block.findall('outputs') + block.findall('clocks'):
-            # Extract port elements or direct text
-            net_names = [port.text.strip() for port in io.findall('port') if port.text] or [
-                io.text.strip() if io.text else None]
-
-            # Process valid net names
+            net_names = [port.text.strip() for port in io.findall('port') if port.text] or [io.text.strip() if io.text else None]
             for net_name in net_names:
                 if net_name:
-                    valid_nets = [
-                        preprocess_net_name(name, full_block_name)
-                        for name in net_name.split()
-                        # TODO: filter the open ports later, after rebuilding the connections
-                    ]
-                    edges.extend(valid_nets)
+                    edges.extend(net_name.split())
                     if block == root:
-                        external_edges.extend(valid_nets)
+                        external_edges.update(net_name.split())
 
-        # Add this block's connections to the hypergraph
+        # Add to hypergraph if not empty
         if edges:
             hypergraph_data.append(edges)
 
-
         # Recursively process child blocks
         for child_block in block.findall('block'):
-            add_blocks(child_block, full_block_name)
+            add_blocks(child_block)
 
-    # Start processing from the root block
     add_blocks(root)
 
-    # Remove duplicates in external edges
-    external_edges = list(set(external_edges))
-    hypergraph_data = rebuild_connections(hypergraph_data)
-    return Hypergraph(hypergraph_data, external_edges, output_folder)
+    return Hypergraph(hypergraph_data, list(external_edges), output_folder)
 
 
 def bipartition(hg, rent_data, hmetis_path, partition_level=0):
@@ -197,5 +139,4 @@ if __name__ == '__main__':
         net_file = sys.argv[1]
         output_path = sys.argv[2]
     hmetis_path = './hmetis/hmetis'
-
     process_net_file(net_file, output_path, hmetis_path)
