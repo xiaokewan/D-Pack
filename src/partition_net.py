@@ -1,32 +1,36 @@
 import os
-import xml.etree.ElementTree as ET
 import numpy as np
-import json
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
+import json
 
 
 class Hypergraph:
     def __init__(self, hypergraph, external_edges, folder, name='hg', suffix=''):
-        self.hypergraph = np.array(hypergraph, dtype=object)
-        self.external_edges = np.array(external_edges)
+        """Initialize the hypergraph and filter valid edges."""
+        self.hypergraph = np.array([self._filter_and_deduplicate_edges(edges) for edges in hypergraph], dtype=object)
 
-        # Filter only valid external edges
-        # external_edges_mask = np.zeros(len(self.external_edges), dtype=bool)
-        # for edges in hypergraph:
-        #     for edge in edges:
-        #         indices = np.argwhere(self.external_edges == edge)
-        #         if indices.size > 0:
-        #             external_edges_mask[indices[0][0]] = True
-        # self.external_edges = self.external_edges[external_edges_mask]
-        self.external_edges = np.array([e for e in external_edges if e and e != "open"])
-
+        valid_edges = {edge for edges in self.hypergraph for edge in edges}
+        self.external_edges = np.array([
+            self._preprocess_net_name(e) for e in external_edges if e and e in valid_edges
+        ])
 
         self.n_vertices = len(self.hypergraph)
         self.n_pins = len(self.external_edges)
         self.folder = folder
         self.name_base = name
         self.suffix = suffix
+
+    def _preprocess_net_name(self, net_name):
+        """Preprocess net name to remove 'out:' prefix and filter 'open' ports."""
+        if net_name.startswith("out:"):
+            net_name = net_name[4:]  # Remove 'out:' prefix
+        return net_name if net_name and net_name != "open" else None
+
+    def _filter_and_deduplicate_edges(self, edges):
+        """Remove 'open' ports and deduplicate edges within each block."""
+        return list({self._preprocess_net_name(edge) for edge in edges if edge and edge != "open"})
 
     def print_hmetis_hypergraph(self):
         """Generate hypergraph format for hMETIS partitioning."""
@@ -69,6 +73,7 @@ class Hypergraph:
 
     def get_path_graphfile(self):
         return os.path.join(self.folder, self.name_base + self.suffix)
+
 
 
 def preprocess_net_name(net_name):
