@@ -165,7 +165,7 @@ def resolve_signal_recursive(sig, block_index, visited, full_instance, is_input)
         block_index (dict): The index mapping of blocks.
         visited (set): Tracks visited signals to avoid circular references.
         full_instance (str): The full hierarchical instance path of the current block.
-        is_input (bool): Whether the signal is an input or output.
+        is_input (bool): Whether the signal is an input or output. (The first property originated from the parent block)
 
     Returns:
         str: The unified name of the resolved signal.
@@ -192,10 +192,7 @@ def resolve_signal_recursive(sig, block_index, visited, full_instance, is_input)
         return sig  # Return the original signal if parsing fails
 
     # Search for the resolved signal in the block index
-    if is_input:
-        resolved_signal = find_signal(block_index, full_instance, signal_name, index, True)
-    else:
-        resolved_signal = find_signal(block_index, full_instance, signal_name, index, False)
+    resolved_signal = find_signal(block_index, full_instance, signal_name, index, is_input)
 
     # If the resolved signal points to another signal, continue the recursion
     instance, port_name = signal_name.rsplit(".", 1)
