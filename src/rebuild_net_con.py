@@ -114,6 +114,9 @@ def find_signal(block_index, full_instance, signal_name, index, isInp):
         result = search_in_child_blocks()
         print(
             f"      block instance: {full_instance}, sigal name: {signal_name, index}, Input: {isInp}, result: {result}")
+    # TODO: the isInp Is not updating correctly!
+    if full_instance == "FPGA_packed_netlist[0].LAB[0].alm[6].lut[1]":
+        print("shit")
     return result if result else "open"
 
 

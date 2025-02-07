@@ -11,7 +11,7 @@
 			<port name="sharein">open</port>
 		</inputs>
 		<outputs>
-			<port name="data_out">n12 open open open open n12 n12 open open open open open open open open open open open open open open open n12 open open open open open open open open open open open open open open open open open</port>
+			<port name="data_out">n12 open open open open n8 n4 open open open open open open open open open open open open open open open n5 open open open open open open open open open open open open open open open open open</port>
 			<port name="cout">open</port>
 			<port name="shareout">open</port>
 		</outputs>
@@ -26,7 +26,7 @@
 				<port name="sharein">open</port>
 			</inputs>
 			<outputs>
-				<port name="data_out">n12 open open open open open</port>
+				<port name="data_out">n10 open open open open open</port>
 				<port name="cout">open</port>
 				<port name="shareout">open</port>
 			</outputs>
@@ -40,7 +40,7 @@
 					<port name="sharein">open</port>
 				</inputs>
 				<outputs>
-					<port name="lout">n12 open</port>
+					<port name="lout">n10 open</port>
 					<port name="cout">open</port>
 					<port name="shareout">open</port>
 				</outputs>
@@ -50,7 +50,7 @@
 						<port name="in">open open n3 open open open</port>
 					</inputs>
 					<outputs>
-						<port name="out">n12</port>
+						<port name="out">n10</port>
 					</outputs>
 					<clocks />
 					<block name="n10" instance="lut[0]">
@@ -78,13 +78,13 @@
 		<block name="open" instance="alm[5]" />
 		<block name="n6" instance="alm[6]" mode="alm">
 			<inputs>
-				<port name="data_in">open n12 open n8 n1 n12 n12 open</port>
+				<port name="data_in">open open open n8 n1 open open open</port>
 				<port name="control">open open open open open open open</port>
 				<port name="cin">open</port>
 				<port name="sharein">open</port>
 			</inputs>
 			<outputs>
-				<port name="data_out">n12 open open n12 open open</port>
+				<port name="data_out">open open open open open open</port>
 				<port name="cout">open</port>
 				<port name="shareout">open</port>
 			</outputs>
@@ -93,29 +93,29 @@
 			</clocks>
 			<block name="n9" instance="lut[0]" mode="names_lut">
 				<inputs>
-					<port name="lin">open open open open open n1 n12</port>
+					<port name="lin">open open open open open n1 open</port>
 					<port name="cin">open</port>
 					<port name="sharein">open</port>
 				</inputs>
 				<outputs>
-					<port name="lout">n12 open</port>
+					<port name="lout">open open</port>
 					<port name="cout">open</port>
 					<port name="shareout">open</port>
 				</outputs>
 				<clocks />
 				<block name="n9" instance="lut6[0]" mode="lut6">
 					<inputs>
-						<port name="in">open open n3 open n1 open</port>
+						<port name="in">open open open open n1 open</port>
 					</inputs>
 					<outputs>
-						<port name="out">n12</port>
+						<port name="out">open</port>
 					</outputs>
 					<clocks />
 					<block name="n9" instance="lut[0]">
 						<attributes />
 						<parameters />
 						<inputs>
-							<port name="in">open open n3 open n1 open</port>
+							<port name="in">open open open open n1 open</port>
 							<port_rotation_map name="in">open open 1 open 0 open</port_rotation_map>
 						</inputs>
 						<outputs>
@@ -127,29 +127,29 @@
 			</block>
 			<block name="n6" instance="lut[1]" mode="names_lut">
 				<inputs>
-					<port name="lin">n12 open open open open n12 n8</port>
+					<port name="lin">open open open open open open n8</port>
 					<port name="cin">open</port>
 					<port name="sharein">open</port>
 				</inputs>
 				<outputs>
-					<port name="lout">n12 open</port>
+					<port name="lout">open open</port>
 					<port name="cout">open</port>
 					<port name="shareout">open</port>
 				</outputs>
 				<clocks />
 				<block name="n6" instance="lut6[0]" mode="lut6">
 					<inputs>
-						<port name="in">open open open n12 n12 n8</port>
+						<port name="in">open open open open open n8</port>
 					</inputs>
 					<outputs>
-						<port name="out">n12</port>
+						<port name="out">open</port>
 					</outputs>
 					<clocks />
 					<block name="n6" instance="lut[0]">
 						<attributes />
 						<parameters />
 						<inputs>
-							<port name="in">open open open n12 n1 n8</port>
+							<port name="in">open open open open open n8</port>
 							<port_rotation_map name="in">open open open 0 2 1</port_rotation_map>
 						</inputs>
 						<outputs>
@@ -164,13 +164,13 @@
 		</block>
 		<block name="n4" instance="alm[7]" mode="alm">
 			<inputs>
-				<port name="data_in">n12 open open open open n2 open n1</port>
+				<port name="data_in">n5 open open open open n2 open n1</port>
 				<port name="control">open open open open open open open</port>
 				<port name="cin">open</port>
 				<port name="sharein">open</port>
 			</inputs>
 			<outputs>
-				<port name="data_out">open n12 n12 n12 open open</port>
+				<port name="data_out">open n5 n4 n5 open open</port>
 				<port name="cout">open</port>
 				<port name="shareout">open</port>
 			</outputs>
@@ -179,29 +179,29 @@
 			</clocks>
 			<block name="n5" instance="lut[0]" mode="names_lut">
 				<inputs>
-					<port name="lin">open n12 open n2 open n1 open</port>
+					<port name="lin">open n5 open n2 open n1 open</port>
 					<port name="cin">open</port>
 					<port name="sharein">open</port>
 				</inputs>
 				<outputs>
-					<port name="lout">n12 open</port>
+					<port name="lout">n5 open</port>
 					<port name="cout">open</port>
 					<port name="shareout">open</port>
 				</outputs>
 				<clocks />
 				<block name="n5" instance="lut6[0]" mode="lut6">
 					<inputs>
-						<port name="in">n2 open open n12 open n1</port>
+						<port name="in">n2 open open n5 open n1</port>
 					</inputs>
 					<outputs>
-						<port name="out">n12</port>
+						<port name="out">n5</port>
 					</outputs>
 					<clocks />
 					<block name="n5" instance="lut[0]">
 						<attributes />
 						<parameters />
 						<inputs>
-							<port name="in">n2 open open n12 open n8</port>
+							<port name="in">n2 open open n5 open n1</port>
 							<port_rotation_map name="in">1 open open 2 open 0</port_rotation_map>
 						</inputs>
 						<outputs>
@@ -218,24 +218,24 @@
 					<port name="sharein">open</port>
 				</inputs>
 				<outputs>
-					<port name="lout">n12 open</port>
+					<port name="lout">n4 open</port>
 					<port name="cout">open</port>
 					<port name="shareout">open</port>
 				</outputs>
 				<clocks />
 				<block name="n4" instance="lut6[0]" mode="lut6">
 					<inputs>
-						<port name="in">open open open n8 open open</port>
+						<port name="in">open open open open open open</port>
 					</inputs>
 					<outputs>
-						<port name="out">n12</port>
+						<port name="out">n4</port>
 					</outputs>
 					<clocks />
 					<block name="n4" instance="lut[0]">
 						<attributes />
 						<parameters />
 						<inputs>
-							<port name="in">open open open n12 open open</port>
+							<port name="in">open open open open open open</port>
 							<port_rotation_map name="in">open open open 0 open open</port_rotation_map>
 						</inputs>
 						<outputs>
@@ -250,13 +250,13 @@
 		</block>
 		<block name="n13" instance="alm[8]" mode="alm">
 			<inputs>
-				<port name="data_in">open open n12 open open n12 open n12</port>
+				<port name="data_in">open open open open open open open n12</port>
 				<port name="control">open open open open open open open</port>
 				<port name="cin">open</port>
 				<port name="sharein">open</port>
 			</inputs>
 			<outputs>
-				<port name="data_out">n12 open open n12 open open</port>
+				<port name="data_out">n14 open open open open open</port>
 				<port name="cout">open</port>
 				<port name="shareout">open</port>
 			</outputs>
@@ -265,29 +265,29 @@
 			</clocks>
 			<block name="n14" instance="lut[0]" mode="names_lut">
 				<inputs>
-					<port name="lin">open open open open n12 n12 open</port>
+					<port name="lin">open open open open open open open</port>
 					<port name="cin">open</port>
 					<port name="sharein">open</port>
 				</inputs>
 				<outputs>
-					<port name="lout">n12 open</port>
+					<port name="lout">n14 open</port>
 					<port name="cout">open</port>
 					<port name="shareout">open</port>
 				</outputs>
 				<clocks />
 				<block name="n14" instance="lut6[0]" mode="lut6">
 					<inputs>
-						<port name="in">n1 open open open open n12</port>
+						<port name="in">open open open open open open</port>
 					</inputs>
 					<outputs>
-						<port name="out">n12</port>
+						<port name="out">n14</port>
 					</outputs>
 					<clocks />
 					<block name="n14" instance="lut[0]">
 						<attributes />
 						<parameters />
 						<inputs>
-							<port name="in">n2 open open open open n8</port>
+							<port name="in">open open open open open open</port>
 							<port_rotation_map name="in">1 open open open open 0</port_rotation_map>
 						</inputs>
 						<outputs>
@@ -304,7 +304,7 @@
 					<port name="sharein">open</port>
 				</inputs>
 				<outputs>
-					<port name="lout">n12 open</port>
+					<port name="lout">open open</port>
 					<port name="cout">open</port>
 					<port name="shareout">open</port>
 				</outputs>
@@ -314,7 +314,7 @@
 						<port name="in">open n12 open open open open</port>
 					</inputs>
 					<outputs>
-						<port name="out">n12</port>
+						<port name="out">open</port>
 					</outputs>
 					<clocks />
 					<block name="n13" instance="lut[0]">
@@ -336,13 +336,13 @@
 		</block>
 		<block name="n8" instance="alm[9]" mode="alm">
 			<inputs>
-				<port name="data_in">n12 n8 n11 n0 n1 n12 n12 n3</port>
+				<port name="data_in">n7 n8 n11 n0 n1 n7 n11 n3</port>
 				<port name="control">open open open open open open open</port>
 				<port name="cin">open</port>
 				<port name="sharein">open</port>
 			</inputs>
 			<outputs>
-				<port name="data_out">n11 n12 n12 n11 open open</port>
+				<port name="data_out">n11 n8 n12 n7 open open</port>
 				<port name="cout">open</port>
 				<port name="shareout">open</port>
 			</outputs>
@@ -351,7 +351,7 @@
 			</clocks>
 			<block name="n12" instance="lut[0]" mode="names_lut">
 				<inputs>
-					<port name="lin">open open open n12 open n8 open</port>
+					<port name="lin">open open open n11 open n8 open</port>
 					<port name="cin">open</port>
 					<port name="sharein">open</port>
 				</inputs>
@@ -363,7 +363,7 @@
 				<clocks />
 				<block name="n12" instance="lut6[0]" mode="lut6">
 					<inputs>
-						<port name="in">open open n2 open open n1</port>
+						<port name="in">open open n11 open open n8</port>
 					</inputs>
 					<outputs>
 						<port name="out">n12</port>
@@ -373,7 +373,7 @@
 						<attributes />
 						<parameters />
 						<inputs>
-							<port name="in">open open n3 open open n8</port>
+							<port name="in">open open n11 open open n8</port>
 							<port_rotation_map name="in">open open 1 open open 0</port_rotation_map>
 						</inputs>
 						<outputs>
@@ -385,29 +385,29 @@
 			</block>
 			<block name="n8" instance="lut[1]" mode="names_lut">
 				<inputs>
-					<port name="lin">open open n1 n12 n0 open n3</port>
+					<port name="lin">open open n1 n7 n0 open n3</port>
 					<port name="cin">open</port>
 					<port name="sharein">open</port>
 				</inputs>
 				<outputs>
-					<port name="lout">n12 open</port>
+					<port name="lout">n8 open</port>
 					<port name="cout">open</port>
 					<port name="shareout">open</port>
 				</outputs>
 				<clocks />
 				<block name="n8" instance="lut6[0]" mode="lut6">
 					<inputs>
-						<port name="in">n0 n8 open n12 n1 open</port>
+						<port name="in">n0 n3 open n7 n1 open</port>
 					</inputs>
 					<outputs>
-						<port name="out">n12</port>
+						<port name="out">n8</port>
 					</outputs>
 					<clocks />
 					<block name="n8" instance="lut[0]">
 						<attributes />
 						<parameters />
 						<inputs>
-							<port name="in">n2 n12 open n12 n1 open</port>
+							<port name="in">n0 n3 open n7 n1 open</port>
 							<port_rotation_map name="in">3 1 open 2 0 open</port_rotation_map>
 						</inputs>
 						<outputs>
@@ -461,10 +461,10 @@
 					<port name="devpor">open</port>
 					<port name="ena">open</port>
 					<port name="asdata">open</port>
-					<port name="d">n12</port>
+					<port name="d">n7</port>
 				</inputs>
 				<outputs>
-					<port name="q">n11</port>
+					<port name="q">n7</port>
 				</outputs>
 				<clocks>
 					<port name="clk">alm.clock[1]-&gt;clock_dff1</port>
@@ -473,7 +473,7 @@
 					<attributes />
 					<parameters />
 					<inputs>
-						<port name="D">n12</port>
+						<port name="D">n7</port>
 					</inputs>
 					<outputs>
 						<port name="Q">n7</port>
@@ -541,7 +541,7 @@
 				<attributes />
 				<parameters />
 				<inputs>
-					<port name="outpad">n4</port>
+					<port name="outpad">n5</port>
 				</inputs>
 				<outputs />
 				<clocks />
@@ -592,7 +592,7 @@
 			<port name="core_in">open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open</port>
 		</inputs>
 		<outputs>
-			<port name="core_out">n0 open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open</port>
+			<port name="core_out">n1 open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open</port>
 		</outputs>
 		<clocks>
 			<port name="clk">open open open open open</port>
@@ -602,7 +602,7 @@
 				<port name="drive_off_chip">open</port>
 			</inputs>
 			<outputs>
-				<port name="recieve_off_chip">n0</port>
+				<port name="recieve_off_chip">n1</port>
 			</outputs>
 			<clocks />
 			<block name="n1" instance="inpad[0]">
@@ -626,7 +626,7 @@
 			<port name="core_in">open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open</port>
 		</inputs>
 		<outputs>
-			<port name="core_out">n0 open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open</port>
+			<port name="core_out">n2 open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open</port>
 		</outputs>
 		<clocks>
 			<port name="clk">open open open open open</port>
@@ -636,7 +636,7 @@
 				<port name="drive_off_chip">open</port>
 			</inputs>
 			<outputs>
-				<port name="recieve_off_chip">n0</port>
+				<port name="recieve_off_chip">n2</port>
 			</outputs>
 			<clocks />
 			<block name="n2" instance="inpad[0]">
@@ -660,7 +660,7 @@
 			<port name="core_in">open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open</port>
 		</inputs>
 		<outputs>
-			<port name="core_out">n0 open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open</port>
+			<port name="core_out">n3 open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open</port>
 		</outputs>
 		<clocks>
 			<port name="clk">open open open open open</port>
@@ -670,7 +670,7 @@
 				<port name="drive_off_chip">open</port>
 			</inputs>
 			<outputs>
-				<port name="recieve_off_chip">n0</port>
+				<port name="recieve_off_chip">n3</port>
 			</outputs>
 			<clocks />
 			<block name="n3" instance="inpad[0]">
@@ -694,7 +694,7 @@
 			<port name="core_in">open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open</port>
 		</inputs>
 		<outputs>
-			<port name="core_out">n0 open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open</port>
+			<port name="core_out">pclk open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open open</port>
 		</outputs>
 		<clocks>
 			<port name="clk">open open open open open</port>
@@ -704,7 +704,7 @@
 				<port name="drive_off_chip">open</port>
 			</inputs>
 			<outputs>
-				<port name="recieve_off_chip">n0</port>
+				<port name="recieve_off_chip">pclk</port>
 			</outputs>
 			<clocks />
 			<block name="pclk" instance="inpad[0]">
