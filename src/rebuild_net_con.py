@@ -114,8 +114,6 @@ def find_signal(block_index, full_instance, signal_name, index, isInp):
         result = search_in_child_blocks()
         print(
             f"      block instance: {full_instance}, sigal name: {signal_name, index}, Input: {isInp}, result: {result}")
-    if result is None:
-        print( "Shit")
     return result if result else "open"
 
 
@@ -154,13 +152,13 @@ def construct_full_instance(full_instance, instance):
     return hierarchical_key
 
 
-def resolve_signal_recursive(signal, block_index, visited, full_instance, is_input):
+def resolve_signal_recursive(sig, block_index, visited, full_instance, is_input):
     """
     Recursively resolves a signal to its final endpoint.
     Updates all signals along the path to a unified name.
 
     Args:
-        signal (str): The signal to resolve.
+        sig (str): The signal to resolve.
         block_index (dict): The index mapping of blocks.
         visited (set): Tracks visited signals to avoid circular references.
         full_instance (str): The full hierarchical instance path of the current block.
@@ -169,25 +167,26 @@ def resolve_signal_recursive(signal, block_index, visited, full_instance, is_inp
     Returns:
         str: The unified name of the resolved signal.
     """
-    if signal == "open":
+    if sig == "open":
         return "open"
 
     # Parse the signal name and index
     # TODO: update here, fix the issue will miss the case "LAB.data_in[0]"
-    signal_name, index = parse_indexed_signal(signal, full_instance)
+    signal_name, index = parse_indexed_signal(sig, full_instance)
 
-    signal = f"{signal_name}{index}" if index is not None else signal
-    if signal in visited:
-        raise ValueError(f"Circular reference detected for signal: {signal}")
+    sig = f"{signal_name}[{index}]" if index is not None else sig
+    if sig in visited:
+        raise ValueError(f"Circular reference detected for signal: {sig}")
 
     # Return the resolved signal if already mapped
-    if signal in port_mapping:
-        return port_mapping[signal]
+    # TODO: port mapping should mbuild with full-instance names
+    if f"{full_instance}.{sig}" in port_mapping:
+        return port_mapping[f"{full_instance}.{sig}"]
 
-    visited.add(f"{full_instance}.{signal_name}[{index}]") if index is not None else visited.add(f"{full_instance}.{signal}")
+    visited.add(f"{full_instance}.{signal_name}[{index}]") if index is not None else visited.add(f"{full_instance}.{sig}")
     if not signal_name:
         # TODO: In this parse, the signal like LAB_datain[0] will be skipped
-        return signal  # Return the original signal if parsing fails
+        return sig  # Return the original signal if parsing fails
 
     # Search for the resolved signal in the block index
     if is_input:
@@ -197,14 +196,14 @@ def resolve_signal_recursive(signal, block_index, visited, full_instance, is_inp
 
     # If the resolved signal points to another signal, continue the recursion
     instance, port_name = signal_name.rsplit(".", 1)
-    if resolved_signal and resolved_signal not in ["open", signal]:
+    if resolved_signal and resolved_signal not in ["open", sig]:
         final_signal = resolve_signal_recursive(resolved_signal, block_index, visited, construct_full_instance(full_instance, instance), is_input)
         # print(f"resolved signal: {resolved_signal}, full_instance: {full_instance}.{instance}, full_instance_constructed: {construct_full_instance(full_instance, instance)}")
     else:
         final_signal = resolved_signal
 
     # Map all signals along the path to the final resolved signal
-    port_mapping[signal] = final_signal
+    port_mapping[f"{full_instance}.{sig}"] = final_signal
     visited.remove(f"{full_instance}.{signal_name}[{index}]")  # Remove the signal from visited to allow other paths to process
     return final_signal
 

@@ -108,7 +108,6 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
                     if block == root:
                         external_edges.update(filtered_nets)
 
-
         # Add to hypergraph if not empty
         if edges:
             hypergraph_data.append(edges)
