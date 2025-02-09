@@ -66,7 +66,7 @@ def build_block_index(root):
     return block_index
 
 
-def find_signal(block_index, full_instance, signal_name, index, isInp):
+def find_signal(block_index, full_instance, signal_name, index):
     """
     Trace signal:
     - If isInp=True, find signal in the current block or parent inputs.
@@ -78,22 +78,27 @@ def find_signal(block_index, full_instance, signal_name, index, isInp):
     instance, port_name = signal_name.rsplit(".", 1)
 
     def search_same_layer_or_parent():
-        """Search for inputs in the same layer or parent block."""
-        # Build key for same layer
+        """Search for signal in the same layer or parent block (Inputs & Outputs)."""
         hierarchical_key = construct_full_instance(full_instance, instance)
         target_block = block_index.get(hierarchical_key)
 
         if target_block is not None:
-            for port in target_block.findall("./inputs/port") + target_block.findall("./outputs/port"):
-                # Here the inputs can possibly be inputs
+            for port in target_block.findall("./inputs/port") + target_block.findall("./clocks/port"):
                 if port.attrib.get("name") == port_name:
                     signals = port.text.strip().split()
                     if index < len(signals):
-                        return signals[index]
-        return None
+                        return signals[index], True  # Found in Inputs → Next step is Input
+
+            for port in target_block.findall("./outputs/port"):
+                if port.attrib.get("name") == port_name:
+                    signals = port.text.strip().split()
+                    if index < len(signals):
+                        return signals[index], False  # Found in Outputs → Next step is Output
+
+        return None, None
 
     def search_in_child_blocks():
-        """Search for outputs in child blocks."""
+        """Search for signal in child blocks (Outputs only)."""
         current_block = block_index.get(full_instance)
         if current_block is not None:
             for child_block in current_block.findall("./block"):
@@ -102,22 +107,15 @@ def find_signal(block_index, full_instance, signal_name, index, isInp):
                         if output_port.attrib.get("name") == port_name:
                             signals = output_port.text.strip().split()
                             if index < len(signals):
-                                return signals[index]
-        return None
+                                return signals[index], False  # Found in Outputs → Next step is Output
 
-    # Choose search strategy
-    if isInp:  # For inputs
-        result = search_same_layer_or_parent()
-        print(
-            f"      block instance: {full_instance}, sigal name: {signal_name, index}, Input: {isInp}, result: {result}")
-    else:  # For outputs
-        result = search_in_child_blocks()
-        print(
-            f"      block instance: {full_instance}, sigal name: {signal_name, index}, Input: {isInp}, result: {result}")
-    # TODO: the isInp Is not updating correctly!
-    if full_instance == "FPGA_packed_netlist[0].LAB[0].alm[6].lut[1]":
-        print("shit")
-    return result if result else "open"
+        return None, None
+
+    result, is_input_next = search_same_layer_or_parent()
+    if result is None:
+        result, is_input_next = search_in_child_blocks()
+    print(   f"      block instance: {full_instance}, sigal name: {signal_name, index}, result: {result}")
+    return (result if result else "open"), (is_input_next if is_input_next is not None else False)
 
 
 def construct_full_instance(full_instance, instance):
@@ -155,7 +153,7 @@ def construct_full_instance(full_instance, instance):
     return hierarchical_key
 
 
-def resolve_signal_recursive(sig, block_index, visited, full_instance, is_input):
+def resolve_signal_recursive(sig, block_index, visited, full_instance):
     """
     Recursively resolves a signal to its final endpoint.
     Updates all signals along the path to a unified name.
@@ -174,37 +172,30 @@ def resolve_signal_recursive(sig, block_index, visited, full_instance, is_input)
         return "open"
 
     # Parse the signal name and index
-    # TODO: update here, fix the issue will miss the case "LAB.data_in[0]"
     signal_name, index = parse_indexed_signal(sig, full_instance)
 
     sig = f"{signal_name}[{index}]" if index is not None else sig
     if sig in visited:
         raise ValueError(f"Circular reference detected for signal: {sig}")
 
-    # Return the resolved signal if already mapped
-    # TODO: port mapping should mbuild with full-instance names
     if f"{full_instance}.{sig}" in port_mapping:
         return port_mapping[f"{full_instance}.{sig}"]
 
     visited.add(f"{full_instance}.{signal_name}[{index}]") if index is not None else visited.add(f"{full_instance}.{sig}")
     if not signal_name:
-        # TODO: In this parse, the signal like LAB_datain[0] will be skipped
         return sig  # Return the original signal if parsing fails
 
-    # Search for the resolved signal in the block index
-    resolved_signal = find_signal(block_index, full_instance, signal_name, index, is_input)
+    resolved_signal, is_input = find_signal(block_index, full_instance, signal_name, index)
 
-    # If the resolved signal points to another signal, continue the recursion
     instance, port_name = signal_name.rsplit(".", 1)
     if resolved_signal and resolved_signal not in ["open", sig]:
-        final_signal = resolve_signal_recursive(resolved_signal, block_index, visited, construct_full_instance(full_instance, instance), is_input)
+        final_signal = resolve_signal_recursive(resolved_signal, block_index, visited, construct_full_instance(full_instance, instance))
         # print(f"resolved signal: {resolved_signal}, full_instance: {full_instance}.{instance}, full_instance_constructed: {construct_full_instance(full_instance, instance)}")
     else:
         final_signal = resolved_signal
 
-    # Map all signals along the path to the final resolved signal
     port_mapping[f"{full_instance}.{sig}"] = final_signal
-    visited.remove(f"{full_instance}.{signal_name}[{index}]")  # Remove the signal from visited to allow other paths to process
+    visited.remove(f"{full_instance}.{signal_name}[{index}]")
     return final_signal
 
 
@@ -222,26 +213,26 @@ def update_block_ports_recursive(block, block_index, parent_instance=""):
     full_instance = f"{parent_instance}.{instance}" if parent_instance and instance else instance
 
     # Update input ports
-    for input_port in block.findall("./inputs/port"):
+    for input_port in block.findall("./inputs/port") + block.findall("./outputs/port") + block.findall("./clocks/port"):
         if input_port.text:
             signals = input_port.text.strip().split()
             updated_signals = []
             visited = set()  # Prevent circular references
             for signal in signals:
-                resolved_signal = resolve_signal_recursive(signal, block_index, visited, full_instance, True)
+                resolved_signal = resolve_signal_recursive(signal, block_index, visited, full_instance)
                 updated_signals.append(resolved_signal)
             input_port.text = " ".join(updated_signals)
 
-    # Update output ports
-    for output_port in block.findall("./outputs/port"):
-        if output_port.text:
-            signals = output_port.text.strip().split()
-            updated_signals = []
-            visited = set()  # Prevent circular references
-            for signal in signals:
-                resolved_signal = resolve_signal_recursive(signal, block_index, visited, full_instance, False)
-                updated_signals.append(resolved_signal)
-            output_port.text = " ".join(updated_signals)
+    # # Update output ports
+    # for output_port in block.findall("./outputs/port"):
+    #     if output_port.text:
+    #         signals = output_port.text.strip().split()
+    #         updated_signals = []
+    #         visited = set()  # Prevent circular references
+    #         for signal in signals:
+    #             resolved_signal = resolve_signal_recursive(signal, block_index, visited, full_instance, False)
+    #             updated_signals.append(resolved_signal)
+    #         output_port.text = " ".join(updated_signals)
 
     # Recursively process child blocks
     for child_block in block.findall("block"):
@@ -273,62 +264,3 @@ if __name__ == '__main__':
         net_file = sys.argv[1]
         output_path = sys.argv[2]
     process_xml(net_file, output_path)
-
-
-# def update_block_ports(block, block_index, parent_instance=""):
-#     """Update block inputs and outputs."""
-#
-#     # Build full instance path for the current block
-#     instance = block.attrib.get("instance", "")
-#     full_instance = f"{parent_instance}.{instance}" if parent_instance and instance else instance
-#
-#     # 1. Process inputs: Search in the same layer or parent block
-#     for input_port in block.findall("./inputs/port"):
-#         if input_port.text:
-#             signals = input_port.text.strip().split()
-#             updated_signals = []
-#             for signal in signals:
-#                 signal_name, index = parse_indexed_signal(signal)
-#                 # signal_name = f"{parent_instance}.{??}"
-#
-#                 if signal_name:
-#                     # Extract parent path (excluding current instance)
-#                     parent_path = ".".join(full_instance.split(".")[:-1])
-#                     combined_signal_name = f"{parent_path}.{signal_name}"
-#                 else:
-#                     combined_signal_name = None
-#
-#                 if signal_name is None and "->" in signal:
-#                     # Handle signals without explicit instance index
-#                     base_signal = signal.split("->")[0]
-#                     base_instance, port_with_index = base_signal.split(".")
-#                     port_name, index = re.match(r"(\w+)\[(\d+)\]", port_with_index).groups()
-#                     combined_signal_name = f"{parent_instance}.{port_name}"
-#                     index = int(index)
-#
-#
-#                 if combined_signal_name:
-#                     actual_signal = find_signal(block_index, full_instance, combined_signal_name, index, True)
-#                     updated_signals.append(actual_signal)
-#                 else:
-#                     updated_signals.append(signal)
-#             input_port.text = " ".join(updated_signals)
-#
-#     # 2. Process outputs: Search in child blocks
-#     for output_port in block.findall("./outputs/port"):
-#         if output_port.text:
-#             signals = output_port.text.strip().split()
-#             updated_signals = []
-#             for signal in signals:
-#                 signal_name, index = parse_indexed_signal(signal)
-#                 if signal_name:
-#                     resolved_signal = find_signal(block_index, full_instance, signal_name, index, False)
-#                     updated_signals.append(resolved_signal)
-#                 else:
-#                     updated_signals.append(signal)
-#             output_port.text = " ".join(updated_signals)
-#
-#     # 3. Recursive call for child blocks
-#     for child_block in block.findall("block"):
-#         update_block_ports(child_block, block_index, full_instance)
-
