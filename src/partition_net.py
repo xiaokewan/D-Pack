@@ -1,9 +1,7 @@
-import os
+import os, re, subprocess, sys, json
 import numpy as np
-import subprocess
-import sys
 import xml.etree.ElementTree as ET
-import json
+
 
 
 class Hypergraph:
@@ -90,7 +88,18 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
     hypergraph_data = []
     external_edges = set()  # Use a set for uniqueness
 
-    def add_blocks(block):
+    def is_embedded_block(block):
+        """Check if a block is deeply embedded and should be ignored."""
+        instance = block.get("instance", "").lower()
+        mode = block.get("mode", "").lower()
+
+        return any(re.match(r"^(io|pad|inpad|outpad|io_cell)\[\d+\]$", instance) for instance in [instance]) \
+            or mode in {"io", "inpad", "outpad"}
+
+    def add_blocks(block, depth=0):
+        if is_embedded_block(block) and depth > 1:
+            return  # Skip deeply embedded blocks
+
         edges = []
         # Collect inputs, outputs, and clocks
         for io in block.findall('inputs') + block.findall('outputs') + block.findall('clocks'):
@@ -114,7 +123,7 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
 
         # Recursively process child blocks
         for child_block in block.findall('block'):
-            add_blocks(child_block)
+            add_blocks(child_block, depth + 1)
 
     add_blocks(root)
 

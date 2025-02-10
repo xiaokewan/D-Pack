@@ -87,15 +87,15 @@ def find_signal(block_index, full_instance, signal_name, index):
                 if port.attrib.get("name") == port_name:
                     signals = port.text.strip().split()
                     if index < len(signals):
-                        return signals[index], True  # Found in Inputs → Next step is Input
+                        return signals[index]  # Found in Inputs → Next step is Input
 
             for port in target_block.findall("./outputs/port"):
                 if port.attrib.get("name") == port_name:
                     signals = port.text.strip().split()
                     if index < len(signals):
-                        return signals[index], False  # Found in Outputs → Next step is Output
+                        return signals[index]  # Found in Outputs → Next step is Output
 
-        return None, None
+        return None
 
     def search_in_child_blocks():
         """Search for signal in child blocks (Outputs only)."""
@@ -107,15 +107,18 @@ def find_signal(block_index, full_instance, signal_name, index):
                         if output_port.attrib.get("name") == port_name:
                             signals = output_port.text.strip().split()
                             if index < len(signals):
-                                return signals[index], False  # Found in Outputs → Next step is Output
+                                return signals[index]  # Found in Outputs → Next step is Output
 
-        return None, None
+        return None
 
-    result, is_input_next = search_same_layer_or_parent()
+    result = search_same_layer_or_parent()
     if result is None:
-        result, is_input_next = search_in_child_blocks()
+        result = search_in_child_blocks()
     print(   f"      block instance: {full_instance}, sigal name: {signal_name, index}, result: {result}")
-    return (result if result else "open"), (is_input_next if is_input_next is not None else False)
+
+    if result is None or result == "open":
+        print("mama")
+    return (result if result else "open")
 
 
 def construct_full_instance(full_instance, instance):
@@ -139,6 +142,8 @@ def construct_full_instance(full_instance, instance):
         parts = full_instance.split(".")
         for i in range(len(parts)):
             if parts[i].startswith(instance_base_type + "["):
+                # print(".".join(parts[:i+1]))
+                parts[-1] = instance
                 return ".".join(parts[:i+1])  # Keep up to the found parent instance
 
     # Check if the instance is a child or sibling
@@ -185,7 +190,7 @@ def resolve_signal_recursive(sig, block_index, visited, full_instance):
     if not signal_name:
         return sig  # Return the original signal if parsing fails
 
-    resolved_signal, is_input = find_signal(block_index, full_instance, signal_name, index)
+    resolved_signal = find_signal(block_index, full_instance, signal_name, index)
 
     instance, port_name = signal_name.rsplit(".", 1)
     if resolved_signal and resolved_signal not in ["open", sig]:
