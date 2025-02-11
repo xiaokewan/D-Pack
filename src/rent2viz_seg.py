@@ -11,7 +11,7 @@ def detect_segments(data):
     mean_slope = np.mean(slopes)
 
     # Identify transition points: when slope deviates significantly from the mean
-    transition_indices = np.where(np.abs(slopes - mean_slope) > 0.5)[0] + 1  # +1 to get the right-side index
+    transition_indices = np.where(np.abs(slopes - mean_slope) > 0.35)[0] + 1  # +1 to get the right-side index
 
     # Ensure three segments: before, within, and after the high-slope region
     if len(transition_indices) < 2:
@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
     rent_file_path = sys.argv[1]
     output_figures_folder = sys.argv[2]
-    output_filename = os.path.basename(rent_file_path) + "_viz.png"
+    output_filename = os.path.basename(rent_file_path) + "_viz_seg.png"
 
     visualize_rent(rent_file_path, output_filename, output_figures_folder)
     print(f"Visualization saved to {output_filename}")
