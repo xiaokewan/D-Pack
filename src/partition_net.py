@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 
 class Hypergraph:
-    def __init__(self, hypergraph, external_edges, folder, name='hg', suffix=''):
+    def __init__(self, hypergraph, external_edges, weights, folder, name='hg', suffix=''):
         """Initialize the hypergraph and filter valid edges."""
         self.hypergraph = np.array([self._filter_and_deduplicate_edges(edges) for edges in hypergraph], dtype=object)
 
@@ -19,6 +19,7 @@ class Hypergraph:
         self.folder = folder
         self.name_base = name
         self.suffix = suffix
+        self.weights = weights
 
     def _preprocess_net_name(self, net_name):
         """Preprocess net name to remove 'out:' prefix and filter 'open' ports."""
@@ -41,15 +42,20 @@ class Hypergraph:
                 else:
                     edge_nodes[edge] = [node]
 
-        hmetis_lines = [f"{len(edge_nodes)} {self.n_vertices}"]
+        hmetis_lines = [f"{len(edge_nodes)} {self.n_vertices} 10"]
         hmetis_lines.extend(" ".join(nodes) for nodes in edge_nodes.values())
+
+        # TODO: Add weights for the vertex
+        for vertex in range(0, self.n_vertices):
+            weight = self.weights.get(vertex, 1)
+            hmetis_lines.append(str(weight))
 
         with open(self.get_path_graphfile(), 'w') as file1:
             file1.writelines([entry + '\n' for entry in hmetis_lines])
 
     def run_hmetis(self, hmetis_path):
         """Run hMETIS partitioning."""
-        subprocess.run([hmetis_path, self.get_path_graphfile(), '2', '5', '10', '1', '1', '2', '1', '0'],
+        subprocess.run([hmetis_path, self.get_path_graphfile(), '2', '5', '10', '1', '1', '2', '1', '1'],
                        capture_output=True)
 
     def split(self, hmetis_path):
@@ -58,16 +64,31 @@ class Hypergraph:
         self.run_hmetis(hmetis_path)
 
         path_splitfile = self.get_path_graphfile() + '.part.2'
+
+        # **Ensure partition file exists before reading**
+        if not os.path.exists(path_splitfile):
+            raise FileNotFoundError(f"hMETIS output file '{path_splitfile}' not found.")
+
         with open(path_splitfile, 'r') as file1:
             mask = np.array(list(map(int, file1.readlines())))
 
-        hypergraph0 = self.hypergraph[mask == 0]
-        hypergraph1 = self.hypergraph[mask == 1]
+        # **Ensure mask length matches number of vertices**
+        if len(mask) != self.n_vertices:
+            raise ValueError(
+                f"Partition mask length {len(mask)} does not match the number of vertices {self.n_vertices}.")
+
+        hypergraph0 = [self.hypergraph[i] for i in range(len(mask)) if mask[i] == 0]
+        hypergraph1 = [self.hypergraph[i] for i in range(len(mask)) if mask[i] == 1]
+
         cut_edges = np.array(list(set(np.concatenate(hypergraph0)) & set(np.concatenate(hypergraph1))))
         self.external_edges = np.unique(np.append(self.external_edges, cut_edges))
 
-        return Hypergraph(hypergraph0, self.external_edges, self.folder, self.name_base, '0'), \
-            Hypergraph(hypergraph1, self.external_edges, self.folder, self.name_base, '1')
+        # **Fix weights mapping: use enumerate(mask) instead of self.weights.keys()**
+        weights0 = {i + 1: self.weights.get(i + 1, 1) for i, part in enumerate(mask) if part == 0}
+        weights1 = {i + 1: self.weights.get(i + 1, 1) for i, part in enumerate(mask) if part == 1}
+
+        return Hypergraph(hypergraph0, self.external_edges, weights0, self.folder, self.name_base, '0'), \
+            Hypergraph(hypergraph1, self.external_edges, weights1, self.folder, self.name_base, '1')
 
     def get_path_graphfile(self):
         return os.path.join(self.folder, self.name_base + self.suffix)
@@ -87,6 +108,7 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
     root = tree.getroot()
     hypergraph_data = []
     external_edges = set()  # Use a set for uniqueness
+    block_weights = {}
 
     def is_embedded_block(block):
         """Check if a block is deeply embedded and should be ignored."""
@@ -95,6 +117,18 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
 
         return any(re.match(r"^(io|pad|inpad|outpad|io_cell)\[\d+\]$", instance) for instance in [instance]) \
             or mode in {"io", "inpad", "outpad"}
+
+    def compute_block_weight(block):
+        """Compute weight based on LUTs, FFs, and LAB blocks inside the block."""
+        weight = 1  # Default weight
+        instance = block.get("instance", "").lower()
+
+        if "lab" in instance or "lut" in instance:
+            weight += 2  # Higher weight for LUTs
+        if "ff" in instance:
+            weight += 1  # Additional weight for FFs
+
+        return weight
 
     def add_blocks(block, depth=0):
         if is_embedded_block(block) and depth > 1:
@@ -120,14 +154,15 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
         # Add to hypergraph if not empty
         if edges:
             hypergraph_data.append(edges)
+            block_weights[len(hypergraph_data)] = compute_block_weight(block)
 
-        # Recursively process child blocks
+            # Recursively process child blocks
         for child_block in block.findall('block'):
             add_blocks(child_block, depth + 1)
 
     add_blocks(root)
 
-    return Hypergraph(hypergraph_data, list(external_edges), output_folder)
+    return Hypergraph(hypergraph_data, list(external_edges), block_weights, output_folder)
 
 
 def bipartition(hg, rent_data, hmetis_path, partition_level=0):
