@@ -106,11 +106,11 @@ def preprocess_net_name(net_name):
 
 
 def parse_net_file_to_hypergraph(file_path, output_folder):
-    """Parse the netlist XML into a hypergraph structure."""
+    """Parse the netlist XML into a hypergraph structure with correct block weights."""
     tree = ET.parse(file_path)
     root = tree.getroot()
     hypergraph_data = []
-    external_edges = set()  # Use a set for uniqueness
+    external_edges = set()
     block_weights = {}
 
     def is_embedded_block(block):
@@ -121,31 +121,38 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
         return any(re.match(r"^(io|pad|inpad|outpad|io_cell)\[\d+\]$", instance) for instance in [instance]) \
             or mode in {"io", "inpad", "outpad"}
 
-    def compute_block_weight(block):
-        """Compute weight based on LUTs, FFs, and LAB blocks inside the block."""
-        weight = 1  # Default weight
-        instance = block.get("instance", "").lower()
+    def count_basic_blocks(block):
+        """Counts the number of LUTs and FFs inside the given block."""
+        lut_count = 0
+        ff_count = 0
 
-        if "lut" in instance:
-            weight += 1
-        if "ff" in instance:
-            weight += 1  # Additional weight for FFs
+        # Recursively count LUTs and FFs inside child blocks
+        def traverse_children(node):
+            nonlocal lut_count, ff_count
+            for child in node.findall("block"):
+                instance = child.get("instance", "").lower()
 
-        return weight
+                if "lut" in instance:
+                    lut_count += 1
+                if "ff" in instance:
+                    ff_count += 1
+
+                traverse_children(child)
+
+        traverse_children(block)
+        return lut_count + ff_count  # Total weight is the sum of LUTs and FFs
 
     def add_blocks(block, depth=0):
+        """Recursively process the netlist and extract hypergraph edges and block weights."""
         if is_embedded_block(block) and depth > 1:
             return  # Skip deeply embedded blocks
 
         edges = []
         # Collect inputs, outputs, and clocks
         for io in block.findall('inputs') + block.findall('outputs') + block.findall('clocks'):
-            net_names = [port.text.strip() for port in io.findall('port') if port.text] or [io.text.strip() if io.text else None]
+            net_names = [port.text.strip() for port in io.findall('port') if port.text] or [
+                io.text.strip() if io.text else None]
             for net_name in net_names:
-                # if net_name:
-                #     edges.extend(net_name.split())
-                #     if block == root:
-                #         external_edges.update(net_name.split())
                 if net_name:
                     filtered_nets = [preprocess_net_name(name) for name in net_name.split()]
                     filtered_nets = [net for net in filtered_nets if net]  # Remove None values
@@ -157,16 +164,17 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
         # Add to hypergraph if not empty
         if edges:
             hypergraph_data.append(edges)
-            block_weights[len(hypergraph_data)] = compute_block_weight(block)
 
-            # Recursively process child blocks
+            # Compute the correct weight for this block (LAB, ALM, etc.)
+            block_weights[len(hypergraph_data)] = count_basic_blocks(block)
+
+        # Recursively process child blocks
         for child_block in block.findall('block'):
             add_blocks(child_block, depth + 1)
 
     add_blocks(root)
 
     return Hypergraph(hypergraph_data, list(external_edges), block_weights, output_folder)
-
 
 def bipartition(hg, rent_data, hmetis_path, partition_level=0):
     """Recursively bipartition the hypergraph, tracking weighted Rent's Rule data."""
