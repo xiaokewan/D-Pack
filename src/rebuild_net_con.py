@@ -39,7 +39,6 @@ def parse_indexed_signal(signal, full_instance=None):
                     resolved_signal = f"{parent_block}.{port_name}"  # e.g., 'LAB[0].data_in'
                     return resolved_signal, int(port_index)
 
-    # If no match, return None
     return None, None
 
 
@@ -114,10 +113,7 @@ def find_signal(block_index, full_instance, signal_name, index):
     result = search_same_layer_or_parent()
     if result is None:
         result = search_in_child_blocks()
-    print(   f"      block instance: {full_instance}, sigal name: {signal_name, index}, result: {result}")
-
-    if result is None or result == "open":
-        print("mama")
+        # print(   f"      block instance: {full_instance}, sigal name: {signal_name, index}, result: {result}")
     return (result if result else "open")
 
 

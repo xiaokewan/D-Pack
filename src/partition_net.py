@@ -3,6 +3,12 @@ import numpy as np
 import xml.etree.ElementTree as ET
 
 
+def _preprocess_net_name(net_name):
+    """Preprocess net name to remove 'out:' prefix and filter 'open' ports."""
+    if net_name.startswith("out:"):
+        net_name = net_name[4:]  # Remove 'out:' prefix
+    return net_name if net_name and net_name != "open" else None
+
 
 class Hypergraph:
     def __init__(self, hypergraph, external_edges, weights, folder, name='hg', suffix=''):
@@ -11,7 +17,7 @@ class Hypergraph:
 
         valid_edges = {edge for edges in self.hypergraph for edge in edges}
         self.external_edges = np.array([
-            self._preprocess_net_name(e) for e in external_edges if e and e in valid_edges
+            _preprocess_net_name(e) for e in external_edges if e and e in valid_edges
         ])
 
         self.n_vertices = len(self.hypergraph)
@@ -21,15 +27,9 @@ class Hypergraph:
         self.suffix = suffix
         self.weights = weights
 
-    def _preprocess_net_name(self, net_name):
-        """Preprocess net name to remove 'out:' prefix and filter 'open' ports."""
-        if net_name.startswith("out:"):
-            net_name = net_name[4:]  # Remove 'out:' prefix
-        return net_name if net_name and net_name != "open" else None
-
     def _filter_and_deduplicate_edges(self, edges):
         """Remove 'open' ports and deduplicate edges within each block."""
-        return list({self._preprocess_net_name(edge) for edge in edges if edge and edge != "open"})
+        return list({_preprocess_net_name(edge) for edge in edges if edge and edge != "open"})
 
     def print_hmetis_hypergraph(self):
         """Generate hypergraph format for hMETIS partitioning."""
@@ -45,7 +45,6 @@ class Hypergraph:
         hmetis_lines = [f"{len(edge_nodes)} {self.n_vertices} 10"]
         hmetis_lines.extend(" ".join(nodes) for nodes in edge_nodes.values())
 
-        # TODO: Add weights for the vertex
         for vertex in range(0, self.n_vertices):
             weight = self.weights.get(vertex, 1)
             hmetis_lines.append(str(weight))
@@ -65,20 +64,25 @@ class Hypergraph:
 
         path_splitfile = self.get_path_graphfile() + '.part.2'
 
-        # **Ensure partition file exists before reading**
+        # **Check if hMetis output file exists**
         if not os.path.exists(path_splitfile):
-            raise FileNotFoundError(f"hMETIS output file '{path_splitfile}' not found.")
+            raise FileNotFoundError(f"Partition file {path_splitfile} missing. Check hMetis execution.")
 
+        # **Read hMetis output**
         with open(path_splitfile, 'r') as file1:
             mask = np.array(list(map(int, file1.readlines())))
 
         # **Ensure mask length matches number of vertices**
         if len(mask) != self.n_vertices:
             raise ValueError(
-                f"Partition mask length {len(mask)} does not match the number of vertices {self.n_vertices}.")
+                f"  ERROR:Partition mask length {len(mask)} does not match the number of vertices {self.n_vertices}.")
 
         hypergraph0 = [self.hypergraph[i] for i in range(len(mask)) if mask[i] == 0]
         hypergraph1 = [self.hypergraph[i] for i in range(len(mask)) if mask[i] == 1]
+
+        if len(hypergraph0) == 0 or len(hypergraph1) == 0:
+            print(f"️   Warning: One of the partitions is empty! Returning single partition.")
+            return self, None
 
         cut_edges = np.array(list(set(np.concatenate(hypergraph0)) & set(np.concatenate(hypergraph1))))
         self.external_edges = np.unique(np.append(self.external_edges, cut_edges))
@@ -92,7 +96,6 @@ class Hypergraph:
 
     def get_path_graphfile(self):
         return os.path.join(self.folder, self.name_base + self.suffix)
-
 
 
 def preprocess_net_name(net_name):
@@ -166,17 +169,29 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
 
 
 def bipartition(hg, rent_data, hmetis_path, partition_level=0):
-    blocks, pins = hg.n_vertices, hg.n_pins
-    if len(rent_data) <= partition_level:
-        rent_data.append([[blocks, pins]])
-    else:
-        rent_data[partition_level].append([blocks, pins])
+    """Recursively bipartition the hypergraph, tracking weighted Rent's Rule data."""
 
-    if blocks > 2:
+    # **Use sum of block weights instead of counting vertices**
+    weighted_blocks = sum(hg.weights.values())  # Consider block weights
+    pins = hg.n_pins  # Terminal count remains the same
+
+    # **Store weighted blocks in rent_data**
+    if len(rent_data) <= partition_level:
+        rent_data.append([[weighted_blocks, pins]])
+    else:
+        rent_data[partition_level].append([weighted_blocks, pins])
+
+    if weighted_blocks > 2:
         hg0, hg1 = hg.split(hmetis_path)
+        if hg0 is None or len(hg0.hypergraph) == 0:
+            print(f"    ⚠️ Skipping empty partition at level {partition_level}")
+            return
+        if hg1 is None or len(hg1.hypergraph) == 0:
+            print(f"    ⚠️ Skipping empty partition at level {partition_level}")
+            return
+
         bipartition(hg0, rent_data, hmetis_path, partition_level + 1)
         bipartition(hg1, rent_data, hmetis_path, partition_level + 1)
-
 
 def process_net_file(net_file, output_folder, hmetis_path):
     os.makedirs(output_folder, exist_ok=True)
