@@ -126,8 +126,8 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
         weight = 1  # Default weight
         instance = block.get("instance", "").lower()
 
-        if "lab" in instance or "lut" in instance:
-            weight += 2  # Higher weight for LUTs
+        if "lut" in instance:
+            weight += 1
         if "ff" in instance:
             weight += 1  # Additional weight for FFs
 
@@ -184,10 +184,10 @@ def bipartition(hg, rent_data, hmetis_path, partition_level=0):
     if weighted_blocks > 2:
         hg0, hg1 = hg.split(hmetis_path)
         if hg0 is None or len(hg0.hypergraph) == 0:
-            print(f"    ⚠️ Skipping empty partition at level {partition_level}")
+            print(f"    Alert: Skipping empty partition at level {partition_level}")
             return
         if hg1 is None or len(hg1.hypergraph) == 0:
-            print(f"    ⚠️ Skipping empty partition at level {partition_level}")
+            print(f"    Alert: Skipping empty partition at level {partition_level}")
             return
 
         bipartition(hg0, rent_data, hmetis_path, partition_level + 1)

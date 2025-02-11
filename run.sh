@@ -24,6 +24,7 @@ if [ $? -ne 0 ]; then
     echo "Error running rebuild_net_con.py"
     exit 1
 fi
+echo "Finished rebuild_net_con."
 
 # Step 2: Run partition_net.py
 echo "Running partition_net.py..."
@@ -32,7 +33,7 @@ if [ $? -ne 0 ]; then
     echo "Error running partition_net.py"
     exit 1
 fi
-
+echo "Finished Partitioning."
 # Step 3: Run rent2viz.py
 echo "Running rent2viz.py..."
 python3 ./src/rent2viz.py "$RENT_JSON_FILE" "$OUTPUT_DIR"
