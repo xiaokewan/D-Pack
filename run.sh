@@ -11,7 +11,7 @@ INPUT_NET_FILE=$1
 BASE_NAME=$(basename "$INPUT_NET_FILE" .net)
 OUTPUT_DIR="./results/${BASE_NAME}/"
 REBUILD_NET_FILE="${OUTPUT_DIR}${BASE_NAME}.net_rebuild.xml"
-RENT_JSON_FILE="${REBUILD_NET_FILE}.rent.json"
+RENT_JSON_FILE="${REBUILD_NET_FILE}.hierarchical.json"
 HMETIS_PATH="./hmetis/hmetis"
 
 # Ensure output directory exists
@@ -28,7 +28,7 @@ echo "Finished rebuild_net_con."
 
 # Step 2: Run partition_net.py
 echo "Running partition_net.py..."
-python3 ./src/partition_net.py "$REBUILD_NET_FILE" "$OUTPUT_DIR"
+python3 ./src/partition_net_md2.py "$REBUILD_NET_FILE" "$OUTPUT_DIR"
 if [ $? -ne 0 ]; then
     echo "Error running partition_net.py"
     exit 1

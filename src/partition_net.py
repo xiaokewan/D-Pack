@@ -139,12 +139,12 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
 
         if lut_count == 0 and ff_count == 0:
             if block.get("mode", "").lower() == "io" and block.get("name", "").lower() != "open":
-                print(
-                    f"    Block {block.get('instance')} weighted 1 ")
+                # print(
+                #     f"    Block {block.get('instance')} weighted 1 ")
                 return 1
         else:
-            print(
-                f"    Block {block.get('instance')} weighted {lut_count + ff_count}")
+            # print(
+            #     f"    Block {block.get('instance')} weighted {lut_count + ff_count}")
             return lut_count + ff_count
 
     def add_blocks(block, depth=0):
@@ -203,7 +203,7 @@ def bipartition(hg, rent_data, hmetis_path, partition_level=0):
         if hg1 is None or len(hg1.hypergraph) == 0:
             print(f"    Alert: Skipping empty partition at level {partition_level}")
             return
-
+        print(f"    blocks: {blocks}  partition level: {partition_level}")
         bipartition(hg0, rent_data, hmetis_path, partition_level + 1)
         bipartition(hg1, rent_data, hmetis_path, partition_level + 1)
 
