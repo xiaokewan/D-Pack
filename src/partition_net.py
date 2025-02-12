@@ -125,22 +125,27 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
         """Counts the number of LUTs and FFs inside the given block."""
         lut_count = 0
         ff_count = 0
-
         # Recursively count LUTs and FFs inside child blocks
         def traverse_children(node):
             nonlocal lut_count, ff_count
             for child in node.findall("block"):
-                instance = child.get("instance", "").lower()
-
-                if "lut" in instance:
+                mode = child.get("mode", "").lower()
+                if "lut6" in mode:
                     lut_count += 1
-                if "ff" in instance:
+                if "latch" in mode:
                     ff_count += 1
-
                 traverse_children(child)
-
         traverse_children(block)
-        return lut_count + ff_count  # Total weight is the sum of LUTs and FFs
+
+        if lut_count == 0 and ff_count == 0:
+            if block.get("mode", "").lower() == "io" and block.get("name", "").lower() != "open":
+                print(
+                    f"    Block {block.get('instance')} weighted 1 ")
+                return 1
+        else:
+            print(
+                f"    Block {block.get('instance')} weighted {lut_count + ff_count}")
+            return lut_count + ff_count
 
     def add_blocks(block, depth=0):
         """Recursively process the netlist and extract hypergraph edges and block weights."""
@@ -163,10 +168,10 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
 
         # Add to hypergraph if not empty
         if edges:
-            hypergraph_data.append(edges)
-
-            # Compute the correct weight for this block (LAB, ALM, etc.)
-            block_weights[len(hypergraph_data)] = count_basic_blocks(block)
+            weight = count_basic_blocks(block)
+            if weight is not None and weight > 0:
+                hypergraph_data.append(edges)
+                block_weights[len(hypergraph_data)] = weight
 
         # Recursively process child blocks
         for child_block in block.findall('block'):
@@ -176,20 +181,21 @@ def parse_net_file_to_hypergraph(file_path, output_folder):
 
     return Hypergraph(hypergraph_data, list(external_edges), block_weights, output_folder)
 
+
 def bipartition(hg, rent_data, hmetis_path, partition_level=0):
     """Recursively bipartition the hypergraph, tracking weighted Rent's Rule data."""
 
     # **Use sum of block weights instead of counting vertices**
     weighted_blocks = sum(hg.weights.values())  # Consider block weights
     pins = hg.n_pins  # Terminal count remains the same
-
+    blocks = hg.n_vertices
     # **Store weighted blocks in rent_data**
     if len(rent_data) <= partition_level:
         rent_data.append([[weighted_blocks, pins]])
     else:
         rent_data[partition_level].append([weighted_blocks, pins])
 
-    if weighted_blocks > 2:
+    if blocks > 2:
         hg0, hg1 = hg.split(hmetis_path)
         if hg0 is None or len(hg0.hypergraph) == 0:
             print(f"    Alert: Skipping empty partition at level {partition_level}")
@@ -200,6 +206,7 @@ def bipartition(hg, rent_data, hmetis_path, partition_level=0):
 
         bipartition(hg0, rent_data, hmetis_path, partition_level + 1)
         bipartition(hg1, rent_data, hmetis_path, partition_level + 1)
+
 
 def process_net_file(net_file, output_folder, hmetis_path):
     os.makedirs(output_folder, exist_ok=True)
