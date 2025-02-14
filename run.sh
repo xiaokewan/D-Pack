@@ -12,6 +12,8 @@ BASE_NAME=$(basename "$INPUT_NET_FILE" .net)
 OUTPUT_DIR="./results/${BASE_NAME}/"
 REBUILD_NET_FILE="${OUTPUT_DIR}${BASE_NAME}.net_rebuild.xml"
 RENT_JSON_FILE="${REBUILD_NET_FILE}.hierarchical.json"
+INTER_JSON_FILE="${OUTPUT_DIR}inter_LAB_partition.json"
+INTRA_JSON_FILE="${OUTPUT_DIR}intra_LAB_partition.json"
 HMETIS_PATH="./hmetis/hmetis"
 
 # Ensure output directory exists
@@ -28,7 +30,7 @@ echo "Finished rebuild_net_con."
 
 # Step 2: Run partition_net.py
 echo "Running partition_net.py..."
-python3 ./src/partition_net_md2.py "$REBUILD_NET_FILE" "$OUTPUT_DIR"
+python3 ./src/partition_net_md3.py "$REBUILD_NET_FILE" "$OUTPUT_DIR"
 if [ $? -ne 0 ]; then
     echo "Error running partition_net.py"
     exit 1
@@ -36,7 +38,8 @@ fi
 echo "Finished Partitioning."
 # Step 3: Run rent2viz.py
 echo "Running rent2viz.py..."
-python3 ./src/rent2viz.py "$RENT_JSON_FILE" "$OUTPUT_DIR"
+# python3 ./src/rent2viz.py "$RENT_JSON_FILE" "$OUTPUT_DIR"
+python3 ./src/rent2viz_2clus.py "$INTRA_JSON_FILE" "$INTER_JSON_FILE" "$OUTPUT_DIR"
 if [ $? -ne 0 ]; then
     echo "Error running rent2viz.py"
     exit 1
