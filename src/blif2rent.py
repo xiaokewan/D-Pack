@@ -177,12 +177,12 @@ def process_blif_file(blif_file, output_folder, hmetis_path):
             writer.writerow(sublist)
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: python3 blif2rent.py <blif_file_path> <hmetis_path>")
+    if len(sys.argv) != 4:
+        print("Usage: python3 blif2rent.py <blif_file_path> <hmetis_path> <output_folder>")
         sys.exit(1)
 
-    blif_file_path, hmetis_path = sys.argv[1], sys.argv[2]
+    blif_file_path, hmetis_path, output_folder = sys.argv[1], sys.argv[2], sys.argv[3]
     base_name = os.path.basename(blif_file_path)
     base_name = base_name.replace('.blif', '')
-    output_folder = f"./results/{base_name}"
+    # output_folder = f"./results/{base_name}"
     process_blif_file(blif_file_path, output_folder, hmetis_path)
