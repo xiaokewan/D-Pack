@@ -1,0 +1,265 @@
+VPR FPGA Placement and Routing.
+Version: 8.1.0-dev+unkown
+Revision: unkown
+Compiled: 2025-02-16T14:22:44
+Compiler: GNU 11.4.0 on Linux-6.8.0-47-generic x86_64
+Build Info: release IPO VTR_ASSERT_LEVEL=2
+
+University of Toronto
+verilogtorouting.org
+vtr-users@googlegroups.com
+This is free open source code under MIT license.
+
+VPR was run with the following command-line:
+/home/xiaokewan/Software/vtr-verilog-to-routing-master/vpr/vpr /home/xiaokewan/Software/vtr-verilog-to-routing-master/vtr_flow/arch/titan/stratixiv_arch.timing.xml /media/xiaokewan/TOSHIBA/Code_phd/D-Pack/gnl_example/stratixiv/10000/rent_exp_0.60.blif --pack --target_ext_pin_util LAB:0.7 --disp off
+
+Using up to 1 parallel worker(s)
+
+Architecture file: /home/xiaokewan/Software/vtr-verilog-to-routing-master/vtr_flow/arch/titan/stratixiv_arch.timing.xml
+Circuit name: rent_exp_0.60
+
+# Loading Architecture Description
+# Loading Architecture Description took 0.34 seconds (max_rss 80.1 MiB, delta_rss +64.7 MiB)
+
+Timing analysis: ON
+Circuit netlist file: rent_exp_0.60.net
+Circuit placement file: rent_exp_0.60.place
+Circuit routing file: rent_exp_0.60.route
+Circuit SDC file: rent_exp_0.60.sdc
+Vpr floorplanning constraints file: not specified
+
+Packer: ENABLED
+Placer: DISABLED
+Router: DISABLED
+Analysis: DISABLED
+
+VPR was run with the following options:
+
+NetlistOpts.abosrb_buffer_luts            : true
+NetlistOpts.sweep_dangling_primary_ios    : true
+NetlistOpts.sweep_dangling_nets           : true
+NetlistOpts.sweep_dangling_blocks         : true
+NetlistOpts.sweep_constant_primary_outputs: false
+NetlistOpts.netlist_verbosity             : 1
+NetlistOpts.const_gen_inference           : COMB_SEQ
+
+PackerOpts.allow_unrelated_clustering: auto
+PackerOpts.alpha_clustering: 0.750000
+PackerOpts.beta_clustering: 0.900000
+PackerOpts.cluster_seed_type: BLEND2
+PackerOpts.connection_driven: true
+PackerOpts.global_clocks: true
+PackerOpts.hill_climbing_flag: false
+PackerOpts.inter_cluster_net_delay: 1.000000
+PackerOpts.timing_driven: true
+PackerOpts.target_external_pin_util: LAB:0.7
+
+# Building complex block graph
+# Building complex block graph took 3.35 seconds (max_rss 953.6 MiB, delta_rss +873.5 MiB)
+Circuit file: /media/xiaokewan/TOSHIBA/Code_phd/D-Pack/gnl_example/stratixiv/10000/rent_exp_0.60.blif
+# Load circuit
+# Load circuit took 0.04 seconds (max_rss 953.6 MiB, delta_rss +0.0 MiB)
+# Clean circuit
+Absorbed 0 LUT buffers
+Inferred    0 additional primitive pins as constant generators since they have no combinationally connected inputs
+Inferred    0 additional primitive pins as constant generators due to constant inputs
+Swept input(s)      : 0
+Swept output(s)     : 0 (0 dangling, 0 constant)
+Swept net(s)        : 0
+Swept block(s)      : 0
+Constant Pins Marked: 0
+# Clean circuit took 0.00 seconds (max_rss 953.6 MiB, delta_rss +0.0 MiB)
+# Compress circuit
+# Compress circuit took 0.01 seconds (max_rss 953.6 MiB, delta_rss +0.0 MiB)
+# Verify circuit
+# Verify circuit took 0.00 seconds (max_rss 953.6 MiB, delta_rss +0.0 MiB)
+Circuit Statistics:
+  Blocks: 11413
+    .input :     528
+    .latch :    1659
+    .output:     226
+    6-LUT  :    9000
+  Nets  : 11187
+    Avg Fanout:     2.0
+    Max Fanout:  1659.0
+    Min Fanout:     1.0
+  Netlist Clocks: 1
+# Build Timing Graph
+  Timing Graph Nodes: 33731
+  Timing Graph Edges: 44862
+  Timing Graph Levels: 84
+# Build Timing Graph took 0.02 seconds (max_rss 954.1 MiB, delta_rss +0.5 MiB)
+Netlist contains 1 clocks
+  Netlist Clock 'pclk' Fanout: 1659 pins (4.9%), 1659 blocks (14.5%)
+# Load Timing Constraints
+
+SDC file 'rent_exp_0.60.sdc' not found
+Setting default timing constraints:
+   * constrain all primay inputs and primary outputs on netlist clock 'pclk'
+   * optimize netlist clock to run as fast as possible
+Timing constraints created 1 clocks
+  Constrained Clock 'pclk' Source: 'pclk.inpad[0]'
+
+# Load Timing Constraints took 0.00 seconds (max_rss 954.1 MiB, delta_rss +0.0 MiB)
+# Packing
+Warning 1: Block type 'M144K' grid location specification startx (33 = 33) falls outside device horizontal range [0,9]
+Warning 2: Block type 'EMPTY' grid location specification startx (33 = 33) falls outside device horizontal range [0,9]
+Begin packing '/media/xiaokewan/TOSHIBA/Code_phd/D-Pack/gnl_example/stratixiv/10000/rent_exp_0.60.blif'.
+
+After removing unused inputs...
+	total blocks: 11413, total nets: 11187, total inputs: 528, total outputs: 226
+Begin prepacking.
+
+There is one chain in this architecture called "LAB_carry_chain" with the following starting points:
+	LAB[0]/alm[0]/lut[0]/lcell_comb[0].cin[0]
+
+
+There is one chain in this architecture called "share_chain" with the following starting points:
+	LAB[0]/alm[0]/lut[0]/lcell_comb[0].sharein[0]
+
+0 attraction groups were created during prepacking.
+Finish prepacking.
+Using inter-cluster delay: 1.01382e-09
+✅ Final Pin Utilization: io:1.00,1.00 LAB:0.70,1.00
+Packing with pin utilization targets: io:1,1 PLL:1,1 LAB:0.7,1 DSP:1,1 M9K:1,1 M144K:1,1
+Packing with high fanout thresholds: io:128 PLL:128 LAB:32 DSP:128 M9K:128 M144K:128
+Starting Clustering - Clustering Progress: 
+-------------------   --------------------------   ---------
+Molecules processed   Number of clusters created   FPGA size
+-------------------   --------------------------   ---------
+   456/11413     3%                           16    11 x 8     
+   912/11413     7%                           33    13 x 10    
+  1368/11413    11%                           48    14 x 10    
+  1824/11413    15%                           65    16 x 12    
+  2280/11413    19%                           83    17 x 13    
+  2736/11413    23%                           99    17 x 13    
+  3192/11413    27%                          117    19 x 14    
+  3648/11413    31%                          136    20 x 15    
+  4104/11413    35%                          154    20 x 15    
+  4560/11413    39%                          173    21 x 16    
+  5016/11413    43%                          192    22 x 16    
+  5472/11413    47%                          211    23 x 17    
+  5928/11413    51%                          230    24 x 18    
+  6384/11413    55%                          250    24 x 18    
+  6840/11413    59%                          271    25 x 19    
+  7296/11413    63%                          291    26 x 19    
+  7752/11413    67%                          312    27 x 20    
+  8208/11413    71%                          333    27 x 20    
+  8664/11413    75%                          355    28 x 21    
+  9120/11413    79%                          376    29 x 21    
+  9576/11413    83%                          398    30 x 22    
+ 10032/11413    87%                          420    30 x 22    
+ 10488/11413    91%                          443    31 x 23    
+ 10944/11413    95%                          760    50 x 37    
+ 11400/11413    99%                         1216   115 x 85    
+Incr Slack updates 1 in 0.000262621 sec
+Full Max Req/Worst Slack updates 1 in 1.9457e-05 sec
+Incr Max Req/Worst Slack updates 0 in 0 sec
+Incr Criticality updates 0 in 0 sec
+Full Criticality updates 1 in 0.000574484 sec
+FPGA sized to 117 x 87 (auto)
+Device Utilization: 0.08 (target 1.00)
+	Block Utilization: 0.99 Type: io
+	Block Utilization: 0.06 Type: LAB
+
+Start the iterative improvement process
+the iterative improvement process is done
+Final Clustering Statistics: 
+----------   --------   ------------------------------------   --------------------------
+Block Type   # Blocks   Avg. # of input clocks and pins used   Avg. # of output pins used
+----------   --------   ------------------------------------   --------------------------
+     EMPTY          0                                      0                            0   
+        io        754                               0.299735                     0.700265   
+       PLL          0                                      0                            0   
+       LAB        476                                19.6849                      12.7206   
+       DSP          0                                      0                            0   
+       M9K          0                                      0                            0   
+     M144K          0                                      0                            0   
+Absorbed logical nets 4604 out of 11187 nets, 6583 nets not absorbed.
+
+Netlist conversion complete.
+
+# Packing took 4.49 seconds (max_rss 1016.5 MiB, delta_rss +62.1 MiB)
+# Load packing
+Begin loading packed FPGA netlist file.
+Netlist generated from file 'rent_exp_0.60.net'.
+Detected 0 constant generators (to see names run with higher pack verbosity)
+Finished loading packed FPGA netlist file (took 0.325384 seconds).
+Warning 3: Treated 0 constant nets as global which will not be routed (to see net names increase packer verbosity).
+# Load packing took 0.34 seconds (max_rss 1054.8 MiB, delta_rss +38.2 MiB)
+Warning 4: Netlist contains 0 global net to non-global architecture pin connections
+
+Pb types usage...
+  io         : 754
+   pad       : 754
+    inpad    : 528
+    outpad   : 226
+  LAB        : 476
+   alm       : 4511
+    lut      : 9000
+     lut6    : 9000
+      lut    : 9000
+    dff      : 1659
+     ff      : 1659
+
+# Create Device
+## Build Device Grid
+FPGA sized to 117 x 87: 10179 grid tiles (auto)
+
+Resource usage...
+	Netlist
+		754	blocks of type: io
+	Architecture
+		760	blocks of type: io
+	Netlist
+		0	blocks of type: PLL
+	Architecture
+		16	blocks of type: PLL
+	Netlist
+		476	blocks of type: LAB
+	Architecture
+		8549	blocks of type: LAB
+	Netlist
+		0	blocks of type: DSP
+	Architecture
+		60	blocks of type: DSP
+	Netlist
+		0	blocks of type: M9K
+	Architecture
+		415	blocks of type: M9K
+	Netlist
+		0	blocks of type: M144K
+	Architecture
+		20	blocks of type: M144K
+
+Device Utilization: 0.08 (target 1.00)
+	Physical Tile io:
+	Block Utilization: 0.99 Logical Block: io
+	Physical Tile PLL:
+	Block Utilization: 0.00 Logical Block: PLL
+	Physical Tile LAB:
+	Block Utilization: 0.06 Logical Block: LAB
+	Physical Tile DSP:
+	Block Utilization: 0.00 Logical Block: DSP
+	Physical Tile M9K:
+	Block Utilization: 0.00 Logical Block: M9K
+	Physical Tile M144K:
+	Block Utilization: 0.00 Logical Block: M144K
+
+FPGA size limited by block type(s): io
+
+## Build Device Grid took 0.03 seconds (max_rss 1058.1 MiB, delta_rss +0.0 MiB)
+## Build routing resource graph
+SOURCE->OPIN and IPIN->SINK edge count:1316008
+OPIN->CHANX/CHANY edge count before creating direct connections: 2656804
+OPIN->CHANX/CHANY edge count after creating direct connections: 3045364
+CHAN->CHAN type edge count:7462856
+## Build routing resource graph took 5.45 seconds (max_rss 1480.0 MiB, delta_rss +421.9 MiB)
+  RR Graph Nodes: 2029506
+  RR Graph Edges: 11824228
+# Create Device took 5.73 seconds (max_rss 1480.0 MiB, delta_rss +421.9 MiB)
+
+
+Flow timing analysis took 0.00965373 seconds (0.00872385 STA, 0.000929879 slack) (1 full updates: 1 setup, 0 hold, 0 combined).
+VPR succeeded
+The entire flow of VPR took 14.69 seconds (max_rss 1480.0 MiB)

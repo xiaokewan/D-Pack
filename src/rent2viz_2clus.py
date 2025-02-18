@@ -95,36 +95,36 @@ def visualize_rent_dual(file1, file2, output_filename="Rents_rule_dual.png", out
 
     # Plot settings
     plt.figure(figsize=(10, 6))
-    plt.scatter(blocks_1, pins_1, alpha=0.1, color='blue', label='Data Points (Intra-LAB)')
-    plt.scatter(blocks_2, pins_2, alpha=0.1, color='green', label='Data Points (Inter-LAB)')
+    plt.scatter(blocks_1, pins_1, alpha=0.1, color='blue', label='Data Points (Inter-CLB)')
+    plt.scatter(blocks_2, pins_2, alpha=0.1, color='green', label='Data Points (Intra-CLB)')
     plt.scatter(bin_means_1[:, 0], bin_means_1[:, 1], s=100, color='red', alpha=0.85, edgecolors='w', linewidths=2,
-                marker='o', label='Bin Means (Intra-LAB)')
+                marker='o', label='Bin Means (Inter-CLB)')
     plt.scatter(bin_means_2[:, 0], bin_means_2[:, 1], s=100, color='orange', alpha=0.85, edgecolors='w', linewidths=2,
-                marker='s', label='Bin Means (Inter-LAB)')
+                marker='s', label='Bin Means (Intra-CLB)')
 
     plt.xscale("log", base=2)
     plt.yscale("log", base=2)
-    plt.xlabel('$B$ (Blocks)', size=15)
-    plt.ylabel('$T$ (Terminals)', size=15)
+    plt.xlabel('$B$', size=20)
+    plt.ylabel('$T$', size=20)
 
     # Plot trendlines if found
     if line_1 is not None:
         plt.plot(np.exp2(line_1[:, 0]), np.exp2(line_1[:, 1]), color='black', linewidth=2, linestyle='--',
-                 label=f'Trend (Intra-LAB) r = {slope_1:.2f}')
+                 label=f'Trend (Inter-CLB) r = {slope_1:.2f}')
     else:
-        print("Warning: No valid trend line found for Intra-LAB.")
+        print("Warning: No valid trend line found for Inter-CLB.")
 
     if line_2 is not None:
         plt.plot(np.exp2(line_2[:, 0]), np.exp2(line_2[:, 1]), color='brown', linewidth=2, linestyle='--',
-                 label=f'Trend (Inter-LAB) r = {slope_2:.2f}')
+                 label=f'Trend (Intra-CLB) r = {slope_2:.2f}')
     else:
-        print("Warning: No valid trend line found for Inter-LAB.")
+        print("Warning: No valid trend line found for Intra-CLB.")
 
-    plt.title('Rent\'s Rule Visualization (Intra-LAB vs. Inter-LAB)')
-    plt.legend()
+    # plt.title('Rent\'s Rule Visualization (Intra-CLB vs. Inter-CLB)')
+    plt.legend(fontsize=14, loc='lower right')
 
     os.makedirs(output_figures_folder, exist_ok=True)
-    plt.savefig(os.path.join(output_figures_folder, output_filename))
+    plt.savefig(os.path.join(output_figures_folder, output_filename), format='pdf')
     plt.show()
 
 
@@ -137,7 +137,7 @@ if __name__ == '__main__':
     rent_file_2 = sys.argv[2]
     output_figures_folder = sys.argv[3]
 
-    output_filename = f"Rents_rule_dual_{os.path.basename(rent_file_1)}_{os.path.basename(rent_file_2)}.png"
+    output_filename = f"Rents_rule_dual_{os.path.basename(rent_file_1)}_{os.path.basename(rent_file_2)}.pdf"
 
     visualize_rent_dual(rent_file_1, rent_file_2, output_filename, output_figures_folder)
     print(f"Visualization saved to {output_filename}")

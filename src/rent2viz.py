@@ -73,19 +73,20 @@ def visualize_rent(rent_path, output_filename='Rents_rule_real.png', output_figu
                 marker='o', label='Bin Means')
     plt.xscale("log", base=2)
     plt.yscale("log", base=2)
-    plt.xlabel('$B$ (Blocks)', size=15)
-    plt.ylabel('$T$ (Terminals)', size=15)
+    plt.xlabel('$B$ (Blocks)', size=20)
+    plt.ylabel('$T$ (Terminals)', size=20)
     if line is not None:
         plt.plot(np.exp2(line[:, 0]), np.exp2(line[:, 1]), color='black', linewidth=2, linestyle='--',
                  label=f'Slope (r) = {slope:.2f}')
     else:
         print("Warning: No valid trend line found, skipping trend line plot.")
 
-    plt.title('Rent\'s Rule Visualization')
-    plt.legend()
+    # plt.title('Rent\'s Rule Visualization')
+    plt.legend(fontsize=14, loc='lower right')
 
     os.makedirs(output_figures_folder, exist_ok=True)
-    plt.savefig(os.path.join(output_figures_folder, output_filename))
+    plt.savefig(os.path.join(output_figures_folder, output_filename), format='pdf')
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -95,7 +96,7 @@ if __name__ == '__main__':
 
     rent_file_path = sys.argv[1]
     output_figures_folder = sys.argv[2]
-    output_filename = os.path.basename(rent_file_path) + "_viz.png"
+    output_filename = os.path.basename(rent_file_path) + "_viz.pdf"
 
     visualize_rent(rent_file_path, output_filename, output_figures_folder)
     print(f"Visualization saved to {output_filename}")
