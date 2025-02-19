@@ -86,7 +86,8 @@ def visualize_rent(rent_path, output_filename='Rents_rule_real.png', output_figu
 
     os.makedirs(output_figures_folder, exist_ok=True)
     plt.savefig(os.path.join(output_figures_folder, output_filename), format='pdf')
-    plt.show()
+    # plt.show()
+    print(f"Rents' Exponent is: {slope}")
 
 
 if __name__ == '__main__':

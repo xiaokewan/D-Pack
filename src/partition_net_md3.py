@@ -186,22 +186,48 @@ class Hypergraph:
         return os.path.join(self.folder, self.name_base + self.suffix)
 
 
+# def bipartition(hg, rent_data, hmetis_path, partition_level=0):
+#     """Recursively bipartition the hypergraph, tracking weighted Rent's Rule data."""
+#     weighted_blocks = sum(hg.weights)
+#     pins = hg.n_pins
+#     blocks = hg.n_vertices
+#
+#     if len(rent_data) <= partition_level:
+#         rent_data.append([])
+#     rent_data[partition_level].append([weighted_blocks, pins])
+#
+#     if blocks > 2:
+#         hg0, hg1 = hg.split(hmetis_path)
+#         if hg0 is None or len(hg0.hypergraph) == 0:
+#             return
+#         if hg1 is None or len(hg1.hypergraph) == 0:
+#             return
+#         del hg
+#         bipartition(hg0, rent_data, hmetis_path, partition_level + 1)
+#         bipartition(hg1, rent_data, hmetis_path, partition_level + 1)
+
+
 def bipartition(hg, rent_data, hmetis_path, partition_level=0):
-    """Recursively bipartition the hypergraph, tracking weighted Rent's Rule data."""
+    '''Recursively bipartition the hypergraph, tracking weighted Rent's Rule data.'''
     weighted_blocks = sum(hg.weights)
     pins = hg.n_pins
     blocks = hg.n_vertices
 
-    if len(rent_data) <= partition_level:
-        rent_data.append([])
-    rent_data[partition_level].append([weighted_blocks, pins])
+    pin_count_dict = {}
+    for vertex_index in range(hg.n_vertices):
+        pin_count = len(hg.hypergraph[vertex_index])
+        if pin_count in pin_count_dict:
+            pin_count_dict[pin_count] += 1
+        else:
+            pin_count_dict[pin_count] = 1
 
+    if len(rent_data) >= partition_level + 1:
+        rent_data[partition_level].append([weighted_blocks, pins, pin_count_dict])
+    else:
+        rent_data.append([[weighted_blocks, pins, pin_count_dict]])
     if blocks > 2:
         hg0, hg1 = hg.split(hmetis_path)
-        if hg0 is None or len(hg0.hypergraph) == 0:
-            return
-        if hg1 is None or len(hg1.hypergraph) == 0:
-            return
+        del hg
         bipartition(hg0, rent_data, hmetis_path, partition_level + 1)
         bipartition(hg1, rent_data, hmetis_path, partition_level + 1)
 
@@ -218,14 +244,14 @@ def process_net_file(net_file, output_folder, hmetis_path):
 
     rent_data = []
     bipartition(lab_hypergraph, rent_data, hmetis_path)
-    lab_output_path = os.path.join(output_folder, "intra_LAB_partition.json")
+    lab_output_path = os.path.join(output_folder, "inter_LAB_partition.json")
     with open(lab_output_path, "w", encoding="utf-8") as fp:
         json.dump(rent_data, fp, indent=4)
     print(f"LAB-Level Partitioning saved to {lab_output_path}")
 
     # **Step 2: Partition Inter-LAB (Inside each LAB)**
     print("Partitioning Inter-LAB Hypergraphs...")
-    inter_lab_data = {}
+    intra_lab_data = {}
     for lab_block in root.findall("block"):
         if is_terminal(lab_block):
             continue
@@ -233,16 +259,16 @@ def process_net_file(net_file, output_folder, hmetis_path):
         if len(sub_hypergraph_data) == 0:
             continue
         lab_name = lab_block.get("instance", "LAB")
-        inter_lab_graph = Hypergraph(sub_hypergraph_data, sub_external_edges, sub_weights, output_folder, f"2inter_LAB")
+        intra_lab_graph = Hypergraph(sub_hypergraph_data, sub_external_edges, sub_weights, output_folder, f"2intra_LAB")
 
-        inter_rent_data = []
-        bipartition(inter_lab_graph, inter_rent_data, hmetis_path)
-        inter_lab_data[lab_name] = inter_rent_data
+        intra_rent_data = []
+        bipartition(intra_lab_graph, intra_rent_data, hmetis_path)
+        intra_lab_data[lab_name] = intra_rent_data
 
-    inter_lab_output_path = os.path.join(output_folder, "inter_LAB_partition.json")
-    with open(inter_lab_output_path, "w", encoding="utf-8") as fp:
-        json.dump(inter_lab_data, fp, indent=4)
-    print(f"Inter-LAB Partitioning saved to {inter_lab_output_path}")
+    intra_lab_output_path = os.path.join(output_folder, "intra_LAB_partition.json")
+    with open(intra_lab_output_path, "w", encoding="utf-8") as fp:
+        json.dump(intra_lab_data, fp, indent=4)
+    print(f"Inter-LAB Partitioning saved to {intra_lab_output_path}")
 
 
 if __name__ == '__main__':

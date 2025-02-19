@@ -52,8 +52,7 @@ def load_rent_data(rent_path):
                     all_levels[level_idx].extend(level_data)
         rent_data = all_levels  # Replace with correctly structured format
 
-    # ✅ Flatten data and extract `[blocks, terminals]` pairs
-    rent_data_flat = np.array([point for level in rent_data for point in level])
+    # Flatten data and extract `[blocks, terminals]` pairs
     rent_data_flat = np.array([point for level in rent_data for point in level])
     blocks, pins = rent_data_flat[:, 0], rent_data_flat[:, 1]
 
@@ -110,22 +109,23 @@ def visualize_rent_dual(file1, file2, output_filename="Rents_rule_dual.png", out
     # Plot trendlines if found
     if line_1 is not None:
         plt.plot(np.exp2(line_1[:, 0]), np.exp2(line_1[:, 1]), color='black', linewidth=2, linestyle='--',
-                 label=f'Trend (Inter-CLB) r = {slope_1:.2f}')
+                 label=f'Trend (Inter-CLB) r = {slope_1:.4f}')
     else:
         print("Warning: No valid trend line found for Inter-CLB.")
 
     if line_2 is not None:
         plt.plot(np.exp2(line_2[:, 0]), np.exp2(line_2[:, 1]), color='brown', linewidth=2, linestyle='--',
-                 label=f'Trend (Intra-CLB) r = {slope_2:.2f}')
+                 label=f'Trend (Intra-CLB) r = {slope_2:.4f}')
     else:
         print("Warning: No valid trend line found for Intra-CLB.")
 
     # plt.title('Rent\'s Rule Visualization (Intra-CLB vs. Inter-CLB)')
-    plt.legend(fontsize=14, loc='lower right')
+    plt.legend(fontsize=18, loc='lower right')
 
     os.makedirs(output_figures_folder, exist_ok=True)
     plt.savefig(os.path.join(output_figures_folder, output_filename), format='pdf')
-    plt.show()
+    # plt.show()
+    print(f"    Inter-LAB: {slope_1:.4f},\n  Intra-LAB: {slope_2:.4f}")
 
 
 if __name__ == '__main__':
